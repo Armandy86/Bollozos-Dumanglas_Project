@@ -420,7 +420,7 @@ export default function Courses() {
                                 padding: '40px 20px',
                                 color: '#6b7280'
                             }}>
-                                <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
+                                <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
                                 <p style={{ margin: 0, fontSize: '16px' }}>
                                     No students or faculty members found for this program.
                                 </p>
@@ -470,7 +470,7 @@ export default function Courses() {
                                             fontWeight: '600',
                                             fontSize: '16px'
                                         }}>
-                                            {member.type === 'student' ? '👨‍🎓' : '👨‍🏫'}
+                                            {member.type === 'student' ? '' : ''}
                                         </div>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ 

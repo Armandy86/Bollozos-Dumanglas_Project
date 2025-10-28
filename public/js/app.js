@@ -58602,8 +58602,7 @@ function Courses() {
               style: {
                 fontSize: '48px',
                 marginBottom: '16px'
-              },
-              children: "\uD83D\uDC65"
+              }
             }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsx)("p", {
               style: {
                 margin: 0,
@@ -58655,7 +58654,7 @@ function Courses() {
                     fontWeight: '600',
                     fontSize: '16px'
                   },
-                  children: member.type === 'student' ? '👨‍🎓' : '👨‍🏫'
+                  children: member.type === 'student' ? '' : ''
                 }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_1__.jsxs)("div", {
                   style: {
                     flex: 1
