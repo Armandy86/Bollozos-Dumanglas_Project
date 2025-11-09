@@ -5,6 +5,10 @@ export default function Courses() {
     const [students, setStudents] = useState([]);
     const [faculty, setFaculty] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [showStudentDetails, setShowStudentDetails] = useState(false);
+    const [showFacultyDetails, setShowFacultyDetails] = useState(false);
+    const [selectedStudent, setSelectedStudent] = useState(null);
+    const [selectedFaculty, setSelectedFaculty] = useState(null);
 
     const programs = [
         {
@@ -131,6 +135,26 @@ export default function Courses() {
     const getTotalMembers = (programId) => {
         const { students, faculty } = getProgramMembers(programId);
         return students.length + faculty.length;
+    };
+
+    const openStudentDetails = (student) => {
+        setSelectedStudent(student);
+        setShowStudentDetails(true);
+    };
+
+    const closeStudentDetails = () => {
+        setShowStudentDetails(false);
+        setSelectedStudent(null);
+    };
+
+    const openFacultyDetails = (faculty) => {
+        setSelectedFaculty(faculty);
+        setShowFacultyDetails(true);
+    };
+
+    const closeFacultyDetails = () => {
+        setShowFacultyDetails(false);
+        setSelectedFaculty(null);
     };
 
     return (
@@ -453,10 +477,12 @@ export default function Courses() {
                                         allMembers.map((member, index) => (
                                             <tr 
                                                 key={`${member.type}-${member.id || index}`}
+                                                onClick={() => member.type === 'student' ? openStudentDetails(member) : openFacultyDetails(member)}
                                                 style={{
                                                     background: 'white',
                                                     borderBottom: '1px solid #f3f4f6',
-                                                    transition: 'background 0.15s'
+                                                    transition: 'background 0.15s',
+                                                    cursor: 'pointer'
                                                 }}
                                                 onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
                                                 onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
@@ -520,6 +546,370 @@ export default function Courses() {
                 );
             })()}
             </div>
+
+            {/* Student Details Modal */}
+            {showStudentDetails && selectedStudent && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 16,
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        width: 'min(900px, 100%)',
+                        maxHeight: '90vh',
+                        background: 'white',
+                        borderRadius: 12,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }}>
+                        {/* Header */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '20px 24px',
+                            borderBottom: '1px solid #e5e7eb'
+                        }}>
+                            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1f2937' }}>
+                                Student Details
+                            </h2>
+                            <button onClick={closeStudentDetails} style={{
+                                background: 'transparent',
+                                border: 'none',
+                                fontSize: '24px',
+                                cursor: 'pointer',
+                                color: '#6b7280',
+                                padding: '4px 8px'
+                            }}>✕</button>
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                                {/* Left Column - Personal Information */}
+                                <div>
+                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
+                                        Personal Information
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Student ID:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.student_id || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                First Name:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.first_name || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Last Name:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.last_name || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Date of Birth:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.date_of_birth || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Gender:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.gender || '—'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Contact Information */}
+                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginTop: '32px', marginBottom: '20px' }}>
+                                        Contact Information
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Email:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.email || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Phone:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.phone || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Address:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.address || '—'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column - Academic Information */}
+                                <div>
+                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
+                                        Academic Information
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Program/Course:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.program || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Year Level:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.year_level || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Section:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedStudent.section || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Status:
+                                            </label>
+                                            <div>
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    padding: '4px 12px',
+                                                    borderRadius: '12px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '600',
+                                                    background: selectedStudent.status?.toLowerCase() === 'active' ? '#dcfce7' : '#fee2e2',
+                                                    color: selectedStudent.status?.toLowerCase() === 'active' ? '#166534' : '#991b1b'
+                                                }}>
+                                                    {selectedStudent.status || '—'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Faculty Details Modal */}
+            {showFacultyDetails && selectedFaculty && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 16,
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        width: 'min(900px, 100%)',
+                        maxHeight: '90vh',
+                        background: 'white',
+                        borderRadius: 12,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }}>
+                        {/* Header */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '20px 24px',
+                            borderBottom: '1px solid #e5e7eb'
+                        }}>
+                            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1f2937' }}>
+                                Faculty Details
+                            </h2>
+                            <button onClick={closeFacultyDetails} style={{
+                                background: 'transparent',
+                                border: 'none',
+                                fontSize: '24px',
+                                cursor: 'pointer',
+                                color: '#6b7280',
+                                padding: '4px 8px'
+                            }}>✕</button>
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                                {/* Left Column - Personal Information */}
+                                <div>
+                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
+                                        Personal Information
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Faculty ID:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.faculty_id || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                First Name:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.first_name || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Last Name:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.last_name || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Date of Birth:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.date_of_birth || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Gender:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.gender || '—'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Contact Information */}
+                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginTop: '32px', marginBottom: '20px' }}>
+                                        Contact Information
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Email:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.email || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Phone:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.phone || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Address:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.address || '—'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column - Professional Information */}
+                                <div>
+                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
+                                        Professional Information
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Department:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.department || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Position:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.position || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Educational Attainment:
+                                            </label>
+                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
+                                                {selectedFaculty.attainment || '—'}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                                                Status:
+                                            </label>
+                                            <div>
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    padding: '4px 12px',
+                                                    borderRadius: '12px',
+                                                    fontSize: '12px',
+                                                    fontWeight: '600',
+                                                    background: selectedFaculty.status?.toLowerCase() === 'full time' ? '#dbeafe' : '#fef3c7',
+                                                    color: selectedFaculty.status?.toLowerCase() === 'full time' ? '#1e40af' : '#92400e'
+                                                }}>
+                                                    {selectedFaculty.status || '—'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

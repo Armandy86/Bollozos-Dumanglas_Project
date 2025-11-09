@@ -23,18 +23,63 @@ export default function Faculty({ onSuccess, showForm = true, showList = true, e
     const [statusMessage, setStatusMessage] = useState('');
     const [editingFaculty, setEditingFaculty] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [departments, setDepartments] = useState([]);
 
-    // Define programs list
-    const programs = [
-        'Nursing Program',
-        'Teachers Education Program', 
-        'Engineering Program',
-        'Criminal Justice Program',
-        'Computer Science Program',
-        'Arts and Sciences Program',
-        'Business Administration Program',
-        'Accountancy Program'
-    ];
+    useEffect(() => {
+        const loadDepartments = async () => {
+            try {
+                const response = await fetch('/api/departments');
+                if (response.ok) {
+                    const data = await response.json();
+                    const deptNames = Array.isArray(data) ? data.map(dept => dept.name || dept) : [];
+                    if (deptNames.length > 0) {
+                        setDepartments(deptNames);
+                    } else {
+                        // Fallback to hardcoded list if API returns empty
+                        setDepartments([
+                            'Nursing Program',
+                            'Teachers Education Program', 
+                            'Engineering Program',
+                            'Criminal Justice Program',
+                            'Computer Science Program',
+                            'Arts and Sciences Program',
+                            'Business Administration Program',
+                            'Accountancy Program'
+                        ]);
+                    }
+                } else {
+                    // Fallback to hardcoded list if API fails
+                    setDepartments([
+                        'Nursing Program',
+                        'Teachers Education Program', 
+                        'Engineering Program',
+                        'Criminal Justice Program',
+                        'Computer Science Program',
+                        'Arts and Sciences Program',
+                        'Business Administration Program',
+                        'Accountancy Program'
+                    ]);
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                // Fallback to hardcoded list if API fails
+                setDepartments([
+                    'Nursing Program',
+                    'Teachers Education Program', 
+                    'Engineering Program',
+                    'Criminal Justice Program',
+                    'Computer Science Program',
+                    'Arts and Sciences Program',
+                    'Business Administration Program',
+                    'Accountancy Program'
+                ]);
+            }
+        };
+        loadDepartments();
+    }, []);
+
+    // Use departments for programs
+    const programs = departments;
 
     // Load faculty when list is intended to be shown
     useEffect(() => {
@@ -464,9 +509,8 @@ export default function Faculty({ onSuccess, showForm = true, showList = true, e
                                 style={inputStyle}
                             >
                                 <option value="">Select Status</option>
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                                <option value="On Leave">On Leave</option>
+                                <option value="Full Time">Full Time</option>
+                                <option value="Part Time">Part Time</option>
                             </select>
 
                             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>

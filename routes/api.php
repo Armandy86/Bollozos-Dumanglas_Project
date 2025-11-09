@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\facultyController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DepartmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,3 +35,9 @@ Route::put('/faculty/{id}', [facultyController::class, 'apiUpdate']);
 Route::delete('/faculty/{id}', [facultyController::class, 'apiDestroy']);
 
 Route::post('/user/change-password', [UserController::class, 'changePassword']);
+
+Route::get('/departments', [DepartmentController::class, 'apiIndex']);
+Route::post('/departments', [DepartmentController::class, 'apiStore']);
+Route::get('/departments/{id}', [DepartmentController::class, 'apiShow']);
+Route::put('/departments/{id}', [DepartmentController::class, 'apiUpdate']);
+Route::delete('/departments/{id}', [DepartmentController::class, 'apiDestroy']);

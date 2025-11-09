@@ -18,6 +18,7 @@ export default function Students({ onDataUpdate }) {
     const [showDeleteStudent, setShowDeleteStudent] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState(null);
     const [showReportLogs, setShowReportLogs] = useState(false);
+    const [departments, setDepartments] = useState([]);
 
     const fetchStudents = async () => {
         try {
@@ -33,6 +34,60 @@ export default function Students({ onDataUpdate }) {
 
     useEffect(() => {
         fetchStudents();
+    }, []);
+
+    // Load departments from API
+    useEffect(() => {
+        const loadDepartments = async () => {
+            try {
+                const response = await fetch('/api/departments');
+                if (response.ok) {
+                    const data = await response.json();
+                    const deptNames = Array.isArray(data) ? data.map(dept => dept.name || dept) : [];
+                    if (deptNames.length > 0) {
+                        setDepartments(deptNames);
+                    } else {
+                        // Fallback to hardcoded list if API returns empty
+                        setDepartments([
+                            'Nursing Program',
+                            'Teachers Education Program', 
+                            'Engineering Program',
+                            'Criminal Justice Program',
+                            'Computer Science Program',
+                            'Arts and Sciences Program',
+                            'Business Administration Program',
+                            'Accountancy Program'
+                        ]);
+                    }
+                } else {
+                    // Fallback to hardcoded list if API fails
+                    setDepartments([
+                        'Nursing Program',
+                        'Teachers Education Program', 
+                        'Engineering Program',
+                        'Criminal Justice Program',
+                        'Computer Science Program',
+                        'Arts and Sciences Program',
+                        'Business Administration Program',
+                        'Accountancy Program'
+                    ]);
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                // Fallback to hardcoded list if API fails
+                setDepartments([
+                    'Nursing Program',
+                    'Teachers Education Program', 
+                    'Engineering Program',
+                    'Criminal Justice Program',
+                    'Computer Science Program',
+                    'Arts and Sciences Program',
+                    'Business Administration Program',
+                    'Accountancy Program'
+                ]);
+            }
+        };
+        loadDepartments();
     }, []);
 
     const openEditStudent = (student) => {
@@ -940,14 +995,9 @@ export default function Students({ onDataUpdate }) {
                                                             autoFocus
                                                         >
                                                             <option value="">Select Program/Course</option>
-                                                            <option value="Nursing Program">Nursing Program</option>
-                                                            <option value="Teachers Education Program">Teachers Education Program</option>
-                                                            <option value="Engineering Program">Engineering Program</option>
-                                                            <option value="Criminal Justice Program">Criminal Justice Program</option>
-                                                            <option value="Computer Science Program">Computer Science Program</option>
-                                                            <option value="Arts and Sciences Program">Arts and Sciences Program</option>
-                                                            <option value="Business Administration Program">Business Administration Program</option>
-                                                            <option value="Accountancy Program">Accountancy Program</option>
+                                                            {departments.map((dept, index) => (
+                                                                <option key={index} value={dept}>{dept}</option>
+                                                            ))}
                                                         </select>
                                                         <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
                                                         <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
@@ -1602,14 +1652,9 @@ export default function Students({ onDataUpdate }) {
                                                             autoFocus
                                                         >
                                                             <option value="">Select Program/Course</option>
-                                                            <option value="Nursing Program">Nursing Program</option>
-                                                            <option value="Teachers Education Program">Teachers Education Program</option>
-                                                            <option value="Engineering Program">Engineering Program</option>
-                                                            <option value="Criminal Justice Program">Criminal Justice Program</option>
-                                                            <option value="Computer Science Program">Computer Science Program</option>
-                                                            <option value="Arts and Sciences Program">Arts and Sciences Program</option>
-                                                            <option value="Business Administration Program">Business Administration Program</option>
-                                                            <option value="Accountancy Program">Accountancy Program</option>
+                                                            {departments.map((dept, index) => (
+                                                                <option key={index} value={dept}>{dept}</option>
+                                                            ))}
                                                         </select>
                                                         <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
                                                         <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
@@ -1994,7 +2039,7 @@ export default function Students({ onDataUpdate }) {
                                 textAlign: 'center'
                             }}>
                                 <div style={{ fontSize: '28px', fontWeight: '700', color: '#2563eb', marginBottom: 4 }}>
-                                    {students.filter(s => s.status === 'Active').length}
+                                    {students.filter(s => s.status && s.status.toString().toLowerCase() === 'active').length}
                                 </div>
                                 <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
                                     Active Students
@@ -2008,7 +2053,7 @@ export default function Students({ onDataUpdate }) {
                                 textAlign: 'center'
                             }}>
                                 <div style={{ fontSize: '28px', fontWeight: '700', color: '#d97706', marginBottom: 4 }}>
-                                    {students.filter(s => s.status === 'Inactive').length}
+                                    {students.filter(s => s.status && s.status.toString().toLowerCase() === 'inactive').length}
                                 </div>
                                 <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
                                     Inactive Students
@@ -2151,18 +2196,64 @@ function AddStudentForm({ onSuccess }) {
     const [errors, setErrors] = useState({});
     const [statusMessage, setStatusMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [departments, setDepartments] = useState([]);
 
-    // Define programs list
-    const programs = [
-        'Nursing Program',
-        'Teachers Education Program', 
-        'Engineering Program',
-        'Criminal Justice Program',
-        'Computer Science Program',
-        'Arts and Sciences Program',
-        'Business Administration Program',
-        'Accountancy Program'
-    ];
+    // Load departments from API
+    useEffect(() => {
+        const loadDepartments = async () => {
+            try {
+                const response = await fetch('/api/departments');
+                if (response.ok) {
+                    const data = await response.json();
+                    const deptNames = Array.isArray(data) ? data.map(dept => dept.name || dept) : [];
+                    if (deptNames.length > 0) {
+                        setDepartments(deptNames);
+                    } else {
+                        // Fallback to hardcoded list if API returns empty
+                        setDepartments([
+                            'Nursing Program',
+                            'Teachers Education Program', 
+                            'Engineering Program',
+                            'Criminal Justice Program',
+                            'Computer Science Program',
+                            'Arts and Sciences Program',
+                            'Business Administration Program',
+                            'Accountancy Program'
+                        ]);
+                    }
+                } else {
+                    // Fallback to hardcoded list if API fails
+                    setDepartments([
+                        'Nursing Program',
+                        'Teachers Education Program', 
+                        'Engineering Program',
+                        'Criminal Justice Program',
+                        'Computer Science Program',
+                        'Arts and Sciences Program',
+                        'Business Administration Program',
+                        'Accountancy Program'
+                    ]);
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                // Fallback to hardcoded list if API fails
+                setDepartments([
+                    'Nursing Program',
+                    'Teachers Education Program', 
+                    'Engineering Program',
+                    'Criminal Justice Program',
+                    'Computer Science Program',
+                    'Arts and Sciences Program',
+                    'Business Administration Program',
+                    'Accountancy Program'
+                ]);
+            }
+        };
+        loadDepartments();
+    }, []);
+
+    // Use departments for programs
+    const programs = departments;
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;

@@ -115,19 +115,6 @@ export default function Settings() {
 
     const settingsOptions = [
         {
-            id: 'edit-profile',
-            icon: (
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
-            ),
-            iconBg: theme === 'dark' ? '#374151' : '#EEF2FF',
-            title: 'Edit Profile',
-            description: 'Update your personal information like name, contact details, and profile picture.',
-            action: () => console.log('Edit Profile clicked')
-        },
-        {
             id: 'change-password',
             icon: (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -220,7 +207,7 @@ export default function Settings() {
                     margin: '12px 0 0 0',
                     transition: 'color 0.3s ease'
                 }}>
-                    Allows the user to update profile information, change their account password, 
+                    Allows the user to change their account password, 
                     switch between light and dark themes, and securely log out of the system.
                 </p>
             </div>

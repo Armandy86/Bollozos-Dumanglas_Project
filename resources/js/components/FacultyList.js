@@ -18,6 +18,7 @@ export default function FacultyList({ onDataUpdate }) {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [pendingChanges, setPendingChanges] = useState({});
     const [showReportLogs, setShowReportLogs] = useState(false);
+    const [departments, setDepartments] = useState([]);
 
     const fetchFaculty = async () => {
         try {
@@ -35,6 +36,60 @@ export default function FacultyList({ onDataUpdate }) {
 
     useEffect(() => {
         fetchFaculty();
+    }, []);
+
+    // Load departments from API
+    useEffect(() => {
+        const loadDepartments = async () => {
+            try {
+                const response = await fetch('/api/departments');
+                if (response.ok) {
+                    const data = await response.json();
+                    const deptNames = Array.isArray(data) ? data.map(dept => dept.name || dept) : [];
+                    if (deptNames.length > 0) {
+                        setDepartments(deptNames);
+                    } else {
+                        // Fallback to hardcoded list if API returns empty
+                        setDepartments([
+                            'Nursing Program',
+                            'Teachers Education Program', 
+                            'Engineering Program',
+                            'Criminal Justice Program',
+                            'Computer Science Program',
+                            'Arts and Sciences Program',
+                            'Business Administration Program',
+                            'Accountancy Program'
+                        ]);
+                    }
+                } else {
+                    // Fallback to hardcoded list if API fails
+                    setDepartments([
+                        'Nursing Program',
+                        'Teachers Education Program', 
+                        'Engineering Program',
+                        'Criminal Justice Program',
+                        'Computer Science Program',
+                        'Arts and Sciences Program',
+                        'Business Administration Program',
+                        'Accountancy Program'
+                    ]);
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                // Fallback to hardcoded list if API fails
+                setDepartments([
+                    'Nursing Program',
+                    'Teachers Education Program', 
+                    'Engineering Program',
+                    'Criminal Justice Program',
+                    'Computer Science Program',
+                    'Arts and Sciences Program',
+                    'Business Administration Program',
+                    'Accountancy Program'
+                ]);
+            }
+        };
+        loadDepartments();
     }, []);
 
     const filteredFaculty = faculty.filter(member => {
@@ -948,14 +1003,9 @@ export default function FacultyList({ onDataUpdate }) {
                                                             autoFocus
                                                         >
                                                             <option value="">Select Department</option>
-                                                            <option value="Nursing Program">Nursing Program</option>
-                                                            <option value="Teachers Education Program">Teachers Education Program</option>
-                                                            <option value="Engineering Program">Engineering Program</option>
-                                                            <option value="Criminal Justice Program">Criminal Justice Program</option>
-                                                            <option value="Computer Science Program">Computer Science Program</option>
-                                                            <option value="Arts and Sciences Program">Arts and Sciences Program</option>
-                                                            <option value="Business Administration Program">Business Administration Program</option>
-                                                            <option value="Accountancy Program">Accountancy Program</option>
+                                                            {departments.map((dept, index) => (
+                                                                <option key={index} value={dept}>{dept}</option>
+                                                            ))}
                                                         </select>
                                                         <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
                                                         <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
@@ -1024,6 +1074,51 @@ export default function FacultyList({ onDataUpdate }) {
                                                     >
                                                         {pendingChanges.position || facultyToEdit.position || '—'}
                                                         {pendingChanges.position && <span style={{ color: '#f59e0b', marginLeft: '8px', fontSize: '12px' }}>●</span>}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>Status:</label>
+                                                {editingField === 'status' ? (
+                                                    <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        <select
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            style={{
+                                                                padding: '4px 8px',
+                                                                border: '1px solid #d1d5db',
+                                                                borderRadius: '4px',
+                                                                fontSize: '14px',
+                                                                outline: 'none',
+                                                                width: '200px'
+                                                            }}
+                                                            autoFocus
+                                                        >
+                                                            <option value="">Select Status</option>
+                                                            <option value="Full Time">Full Time</option>
+                                                            <option value="Part Time">Part Time</option>
+                                                        </select>
+                                                        <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
+                                                        <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        style={{
+                                                            color: '#374151',
+                                                            marginTop: '4px',
+                                                            cursor: 'pointer',
+                                                            padding: '2px 4px',
+                                                            borderRadius: '4px',
+                                                            backgroundColor: pendingChanges.status ? '#fef3c7' : 'transparent',
+                                                            border: pendingChanges.status ? '1px solid #f59e0b' : '1px solid transparent'
+                                                        }}
+                                                        onDoubleClick={() => startEditing('status', facultyToEdit.status)}
+                                                        onMouseEnter={(e) => e.target.style.background = '#f3f4f6'}
+                                                        onMouseLeave={(e) => e.target.style.background = pendingChanges.status ? '#fef3c7' : 'transparent'
+                                                        }
+                                                    >
+                                                        {pendingChanges.status || facultyToEdit.status || '—'}
+                                                        {pendingChanges.status && <span style={{ color: '#f59e0b', marginLeft: '8px', fontSize: '12px' }}>●</span>}
                                                     </div>
                                                 )}
                                             </div>
@@ -1511,14 +1606,9 @@ export default function FacultyList({ onDataUpdate }) {
                                                             autoFocus
                                                         >
                                                             <option value="">Select Department</option>
-                                                            <option value="Nursing Program">Nursing Program</option>
-                                                            <option value="Teachers Education Program">Teachers Education Program</option>
-                                                            <option value="Engineering Program">Engineering Program</option>
-                                                            <option value="Criminal Justice Program">Criminal Justice Program</option>
-                                                            <option value="Computer Science Program">Computer Science Program</option>
-                                                            <option value="Arts and Sciences Program">Arts and Sciences Program</option>
-                                                            <option value="Business Administration Program">Business Administration Program</option>
-                                                            <option value="Accountancy Program">Accountancy Program</option>
+                                                            {departments.map((dept, index) => (
+                                                                <option key={index} value={dept}>{dept}</option>
+                                                            ))}
                                                         </select>
                                                         <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
                                                         <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
@@ -1594,19 +1684,48 @@ export default function FacultyList({ onDataUpdate }) {
                                             </div>
                                             <div>
                                                 <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>Status:</label>
-                                                <div style={{ 
-                                                    color: '#374151', 
-                                                    marginTop: '4px',
-                                                    padding: '4px 8px',
-                                                    borderRadius: '6px',
-                                                    backgroundColor: selectedFaculty.status === 'Active' ? '#dcfce7' : '#fef3c7',
-                                                    color: selectedFaculty.status === 'Active' ? '#166534' : '#92400e',
-                                                    display: 'inline-block',
-                                                    fontSize: '12px',
-                                                    fontWeight: '600'
-                                                }}>
-                                                    {selectedFaculty.status || '—'}
-                                                </div>
+                                                {editingField === 'status' ? (
+                                                    <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        <select
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            style={{
+                                                                padding: '4px 8px',
+                                                                border: '1px solid #d1d5db',
+                                                                borderRadius: '4px',
+                                                                fontSize: '14px',
+                                                                outline: 'none',
+                                                                width: '200px'
+                                                            }}
+                                                            autoFocus
+                                                        >
+                                                            <option value="">Select Status</option>
+                                                            <option value="Full Time">Full Time</option>
+                                                            <option value="Part Time">Part Time</option>
+                                                        </select>
+                                                        <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
+                                                        <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        style={{
+                                                            color: '#374151',
+                                                            marginTop: '4px',
+                                                            cursor: 'pointer',
+                                                            padding: '2px 4px',
+                                                            borderRadius: '4px',
+                                                            backgroundColor: pendingChanges.status ? '#fef3c7' : 'transparent',
+                                                            border: pendingChanges.status ? '1px solid #f59e0b' : '1px solid transparent'
+                                                        }}
+                                                        onDoubleClick={() => startEditing('status', selectedFaculty.status)}
+                                                        onMouseEnter={(e) => e.target.style.background = '#f3f4f6'}
+                                                        onMouseLeave={(e) => e.target.style.background = pendingChanges.status ? '#fef3c7' : 'transparent'
+                                                        }
+                                                    >
+                                                        {pendingChanges.status || selectedFaculty.status || '—'}
+                                                        {pendingChanges.status && <span style={{ color: '#f59e0b', marginLeft: '8px', fontSize: '12px' }}>●</span>}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -1818,7 +1937,11 @@ export default function FacultyList({ onDataUpdate }) {
                                 textAlign: 'center'
                             }}>
                                 <div style={{ fontSize: '28px', fontWeight: '700', color: '#2563eb', marginBottom: 4 }}>
-                                    {faculty.filter(f => f.position === 'Full Time Instructor').length}
+                                    {faculty.filter(f => {
+                                        if (!f.status) return false;
+                                        const status = f.status.toString().toLowerCase();
+                                        return status === 'full time';
+                                    }).length}
                                 </div>
                                 <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
                                     Full Time
@@ -1832,7 +1955,11 @@ export default function FacultyList({ onDataUpdate }) {
                                 textAlign: 'center'
                             }}>
                                 <div style={{ fontSize: '28px', fontWeight: '700', color: '#d97706', marginBottom: 4 }}>
-                                    {faculty.filter(f => f.position === 'Part Time Instructor').length}
+                                    {faculty.filter(f => {
+                                        if (!f.status) return false;
+                                        const status = f.status.toString().toLowerCase();
+                                        return status === 'part time';
+                                    }).length}
                                 </div>
                                 <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
                                     Part Time
@@ -1960,18 +2087,64 @@ function AddFacultyForm({ onSuccess }) {
     const [errors, setErrors] = useState({});
     const [statusMessage, setStatusMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [departments, setDepartments] = useState([]);
 
-    // Define programs list
-    const programs = [
-        'Nursing Program',
-        'Teachers Education Program', 
-        'Engineering Program',
-        'Criminal Justice Program',
-        'Computer Science Program',
-        'Arts and Sciences Program',
-        'Business Administration Program',
-        'Accountancy Program'
-    ];
+    // Load departments from API
+    useEffect(() => {
+        const loadDepartments = async () => {
+            try {
+                const response = await fetch('/api/departments');
+                if (response.ok) {
+                    const data = await response.json();
+                    const deptNames = Array.isArray(data) ? data.map(dept => dept.name || dept) : [];
+                    if (deptNames.length > 0) {
+                        setDepartments(deptNames);
+                    } else {
+                        // Fallback to hardcoded list if API returns empty
+                        setDepartments([
+                            'Nursing Program',
+                            'Teachers Education Program', 
+                            'Engineering Program',
+                            'Criminal Justice Program',
+                            'Computer Science Program',
+                            'Arts and Sciences Program',
+                            'Business Administration Program',
+                            'Accountancy Program'
+                        ]);
+                    }
+                } else {
+                    // Fallback to hardcoded list if API fails
+                    setDepartments([
+                        'Nursing Program',
+                        'Teachers Education Program', 
+                        'Engineering Program',
+                        'Criminal Justice Program',
+                        'Computer Science Program',
+                        'Arts and Sciences Program',
+                        'Business Administration Program',
+                        'Accountancy Program'
+                    ]);
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+                // Fallback to hardcoded list if API fails
+                setDepartments([
+                    'Nursing Program',
+                    'Teachers Education Program', 
+                    'Engineering Program',
+                    'Criminal Justice Program',
+                    'Computer Science Program',
+                    'Arts and Sciences Program',
+                    'Business Administration Program',
+                    'Accountancy Program'
+                ]);
+            }
+        };
+        loadDepartments();
+    }, []);
+
+    // Use departments for programs
+    const programs = departments;
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;

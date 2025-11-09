@@ -24,7 +24,6 @@ export default function Login() {
         setIsLoading(true);
         setError('');
 
-        // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Check credentials
