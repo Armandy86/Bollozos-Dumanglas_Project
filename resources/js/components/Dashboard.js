@@ -12,12 +12,24 @@ export default function Dashboard() {
     const [faculty, setFaculty] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentView, setCurrentView] = useState('dashboard');
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
 
     // Initialize theme on component mount
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
     }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showProfileDropdown && !event.target.closest('[data-profile-dropdown]')) {
+                setShowProfileDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showProfileDropdown]);
 
     // Check authentication on component mount
     useEffect(() => {
@@ -469,33 +481,81 @@ export default function Dashboard() {
                             <div style={{ fontSize: 12, color: 'var(--text-secondary)', transition: 'color 0.3s ease' }}>Student and Faculty Profile Management System</div>
                         </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                        <div style={{ 
-                            width: 36, 
-                            height: 36, 
-                            borderRadius: '50%', 
-                            background: 'var(--bg-tertiary)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.3s ease'
-                        }}>
-                            <BellIcon />
-                        </div>
-                        <div style={{ 
-                            width: 36, 
-                            height: 36, 
-                            borderRadius: '50%', 
-                            background: 'var(--accent-primary)', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.3s ease'
-                        }}>
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'center', position: 'relative' }} data-profile-dropdown>
+                        <div 
+                            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                            style={{ 
+                                width: 36, 
+                                height: 36, 
+                                borderRadius: '50%', 
+                                background: 'var(--accent-primary)', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'background-color 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                        >
                             <UserIcon />
                         </div>
+
+                        {/* Profile Dropdown */}
+                        {showProfileDropdown && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '50px',
+                                right: 0,
+                                background: 'white',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                minWidth: 180,
+                                zIndex: 1000,
+                                overflow: 'hidden'
+                            }}>
+                                <div style={{
+                                    padding: '12px 16px',
+                                    borderBottom: '1px solid #f3f4f6'
+                                }}>
+                                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>
+                                        {localStorage.getItem('userEmail') || 'User'}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (confirm('Are you sure you want to logout?')) {
+                                            localStorage.removeItem('isLoggedIn');
+                                            localStorage.removeItem('userEmail');
+                                            window.location.href = '/login';
+                                        }
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 16px',
+                                        border: 'none',
+                                        background: 'transparent',
+                                        textAlign: 'left',
+                                        cursor: 'pointer',
+                                        fontSize: 14,
+                                        color: '#dc2626',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                    Logout
+                                </button>
+                            </div>
+                        )}
                     </div>
             </div>
 
@@ -1462,7 +1522,7 @@ export default function Dashboard() {
                                         </div>
                                     </div>
                                     <div>
-                                        <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Academic Information</h3>
+                                        <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Professional Information</h3>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             <div>
                                                 <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>Department:</label>
@@ -2502,14 +2562,6 @@ function SettingsIcon({ color = '#4a5568' }) {
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill={color}/>
-        </svg>
-    );
-}
-
-function BellIcon() {
-    return (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" fill="#6b7280"/>
         </svg>
     );
 }

@@ -1,7 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function Schedule() {
+export default function Schedule({ selectedPerson = null, onBack = null }) {
     const [searchQuery, setSearchQuery] = useState('');
+    const [students, setStudents] = useState([]);
+    const [faculty, setFaculty] = useState([]);
+    const [selectedPersonState, setSelectedPersonState] = useState(selectedPerson);
+
+    // Fetch students and faculty for search
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [studentsRes, facultyRes] = await Promise.all([
+                    fetch('/api/students'),
+                    fetch('/api/faculty')
+                ]);
+                const studentsData = await studentsRes.json();
+                const facultyData = await facultyRes.json();
+                setStudents(Array.isArray(studentsData) ? studentsData : []);
+                setFaculty(Array.isArray(facultyData) ? facultyData.filter(f => f.status !== 'archived') : []);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        };
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        if (selectedPerson) {
+            setSelectedPersonState(selectedPerson);
+        }
+    }, [selectedPerson]);
 
     // Time slots from 6 AM to 9 PM
     const timeSlots = [
@@ -101,6 +129,20 @@ export default function Schedule() {
         return { top, height };
     };
 
+    // Filter search results
+    const filteredResults = searchQuery.trim() !== '' ? [
+        ...students.filter(s => 
+            `${s.first_name} ${s.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (s.email && s.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (s.student_id && s.student_id.includes(searchQuery))
+        ).map(s => ({ ...s, type: 'student' })),
+        ...faculty.filter(f =>
+            `${f.first_name} ${f.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (f.email && f.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (f.faculty_id && f.faculty_id.includes(searchQuery))
+        ).map(f => ({ ...f, type: 'faculty' }))
+    ] : [];
+
     return (
         <div style={{ 
             padding: '32px 48px', 
@@ -108,43 +150,171 @@ export default function Schedule() {
             minHeight: '100vh',
             width: '100%'
         }}>
-            {/* Search Bar */}
-            <div style={{
-                marginBottom: 32,
-                position: 'relative'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: '#f9fafb',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 8,
-                    padding: '12px 16px',
-                    gap: 12
-                }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    <input
-                        type="text"
-                        placeholder="Search for a student by name or email"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+            {/* Header with Back Button */}
+            {selectedPersonState && (
+                <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <button
+                        onClick={() => {
+                            setSelectedPersonState(null);
+                            if (onBack) onBack();
+                        }}
                         style={{
-                            border: 'none',
-                            outline: 'none',
-                            background: 'transparent',
+                            background: '#f3f4f6',
+                            border: '1px solid #d1d5db',
+                            borderRadius: 8,
+                            padding: '8px 16px',
+                            cursor: 'pointer',
+                            fontWeight: 600,
                             fontSize: 14,
                             color: '#374151',
-                            width: '100%',
-                            fontFamily: 'system-ui, -apple-system, sans-serif'
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8
                         }}
-                    />
+                    >
+                        ← Back
+                    </button>
+                    <div>
+                        <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#111827' }}>
+                            Schedule for {selectedPersonState.first_name} {selectedPersonState.last_name}
+                        </h2>
+                        <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#6b7280' }}>
+                            {selectedPersonState.type === 'student' 
+                                ? `Student ID: ${selectedPersonState.student_id || 'N/A'} • ${selectedPersonState.program || 'N/A'}`
+                                : `Faculty ID: ${selectedPersonState.faculty_id || 'N/A'} • ${selectedPersonState.department || 'N/A'}`
+                            }
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {/* Schedule Grid */}
+            {/* Search Bar - Only show if no person is selected */}
+            {!selectedPersonState && (
+                <div style={{
+                    marginBottom: 32,
+                    position: 'relative'
+                }}>
+                    <h1 style={{ margin: '0 0 16px 0', fontSize: 32, fontWeight: 700, color: '#111827' }}>
+                        Schedule
+                    </h1>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: '#f9fafb',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: 8,
+                        padding: '12px 16px',
+                        gap: 12
+                    }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Search for a student or faculty member to view their schedule..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{
+                                border: 'none',
+                                outline: 'none',
+                                background: 'transparent',
+                                fontSize: 14,
+                                color: '#374151',
+                                width: '100%',
+                                fontFamily: 'system-ui, -apple-system, sans-serif'
+                            }}
+                        />
+                    </div>
+
+                    {/* Search Results Dropdown */}
+                    {searchQuery && filteredResults.length > 0 && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            background: 'white',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 8,
+                            marginTop: 8,
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                            maxHeight: 400,
+                            overflowY: 'auto',
+                            zIndex: 10
+                        }}>
+                            {filteredResults.map((person, index) => (
+                                <div
+                                    key={`${person.type}-${person.id}`}
+                                    onClick={() => {
+                                        setSelectedPersonState(person);
+                                        setSearchQuery('');
+                                    }}
+                                    style={{
+                                        padding: 16,
+                                        borderBottom: index < filteredResults.length - 1 ? '1px solid #f3f4f6' : 'none',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                >
+                                    <div style={{ fontWeight: 600, color: '#111827', marginBottom: 4 }}>
+                                        {person.first_name} {person.last_name}
+                                    </div>
+                                    <div style={{ fontSize: 13, color: '#6b7280' }}>
+                                        {person.type === 'student' 
+                                            ? `Student • ID: ${person.student_id || 'N/A'} • ${person.program || 'N/A'}`
+                                            : `Faculty • ID: ${person.faculty_id || 'N/A'} • ${person.department || 'N/A'}`
+                                        }
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {searchQuery && filteredResults.length === 0 && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            background: 'white',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 8,
+                            marginTop: 8,
+                            padding: 24,
+                            textAlign: 'center',
+                            color: '#6b7280',
+                            fontSize: 14
+                        }}>
+                            No results found for "{searchQuery}"
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Show message if no person selected */}
+            {!selectedPersonState && !searchQuery && (
+                <div style={{
+                    textAlign: 'center',
+                    padding: 60,
+                    color: '#6b7280'
+                }}>
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5" style={{ margin: '0 auto 16px' }}>
+                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                    </svg>
+                    <h3 style={{ fontSize: 20, fontWeight: 600, color: '#374151', margin: '0 0 8px 0' }}>
+                        No Schedule Selected
+                    </h3>
+                    <p style={{ margin: 0, fontSize: 14 }}>
+                        Search for a student or faculty member above to view their schedule
+                    </p>
+                </div>
+            )}
+
+            {/* Schedule Grid - Only show if person is selected */}
+            {selectedPersonState && (
             <div style={{
                 display: 'flex',
                 gap: 0,
@@ -247,6 +417,7 @@ export default function Schedule() {
                     })}
                 </div>
             </div>
+            )}
         </div>
     );
 }

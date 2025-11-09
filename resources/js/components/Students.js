@@ -17,6 +17,7 @@ export default function Students({ onDataUpdate }) {
     const [showAddStudent, setShowAddStudent] = useState(false);
     const [showDeleteStudent, setShowDeleteStudent] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState(null);
+    const [showReportLogs, setShowReportLogs] = useState(false);
 
     const fetchStudents = async () => {
         try {
@@ -286,30 +287,56 @@ export default function Students({ onDataUpdate }) {
                 <div style={{ fontSize: '18px', fontWeight: '600', color: '#374151' }}>
                     Students ({filteredStudents.length})
                 </div>
-                <button 
-                    onClick={openAddStudent}
-                    style={{
-                        background: '#16a34a',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 8,
-                        padding: '10px 20px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.target.style.background = '#15803d'}
-                    onMouseLeave={(e) => e.target.style.background = '#16a34a'}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Add Student
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button 
+                        onClick={() => setShowReportLogs(true)}
+                        style={{
+                            background: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 8,
+                            padding: '10px 20px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Report Logs
+                    </button>
+                    <button 
+                        onClick={openAddStudent}
+                        style={{
+                            background: '#16a34a',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 8,
+                            padding: '10px 20px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#15803d'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#16a34a'}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Add Student
+                    </button>
+                </div>
             </div>
 
             {/* Table */}
@@ -1883,6 +1910,202 @@ export default function Students({ onDataUpdate }) {
                                 }}
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Report Logs Modal */}
+            {showReportLogs && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: 12,
+                        padding: 32,
+                        maxWidth: 900,
+                        width: '90%',
+                        maxHeight: '80vh',
+                        overflow: 'auto',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                                Student Report Logs
+                            </h2>
+                            <button
+                                onClick={() => setShowReportLogs(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: 8,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#6b7280'
+                                }}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: 24 }}>
+                            <p style={{ color: '#6b7280', margin: 0, lineHeight: '1.6' }}>
+                                View and export student activity logs including additions, modifications, and deletions.
+                            </p>
+                        </div>
+
+                        {/* Stats Cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+                            <div style={{
+                                background: '#f0fdf4',
+                                border: '1px solid #86efac',
+                                borderRadius: 8,
+                                padding: 16,
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#16a34a', marginBottom: 4 }}>
+                                    {students.length}
+                                </div>
+                                <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
+                                    Total Students
+                                </div>
+                            </div>
+                            <div style={{
+                                background: '#dbeafe',
+                                border: '1px solid #93c5fd',
+                                borderRadius: 8,
+                                padding: 16,
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#2563eb', marginBottom: 4 }}>
+                                    {students.filter(s => s.status === 'Active').length}
+                                </div>
+                                <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
+                                    Active Students
+                                </div>
+                            </div>
+                            <div style={{
+                                background: '#fef3c7',
+                                border: '1px solid #fcd34d',
+                                borderRadius: 8,
+                                padding: 16,
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#d97706', marginBottom: 4 }}>
+                                    {students.filter(s => s.status === 'Inactive').length}
+                                </div>
+                                <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
+                                    Inactive Students
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Program Distribution */}
+                        <div style={{
+                            background: '#f9fafb',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 8,
+                            padding: 20,
+                            marginBottom: 24
+                        }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', margin: '0 0 16px 0' }}>
+                                Program Distribution
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {[...new Set(students.map(s => s.program))].filter(p => p).map((program, index) => {
+                                    const count = students.filter(s => s.program === program).length;
+                                    const percentage = ((count / students.length) * 100).toFixed(1);
+                                    return (
+                                        <div key={index}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                                <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>{program}</span>
+                                                <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: '600' }}>{count} ({percentage}%)</span>
+                                            </div>
+                                            <div style={{ width: '100%', height: 8, background: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+                                                <div style={{ width: `${percentage}%`, height: '100%', background: '#3b82f6', borderRadius: 4 }}></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Export Button */}
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => {
+                                    const csvContent = [
+                                        ['Student ID', 'Name', 'Email', 'Program', 'Year Level', 'Section', 'Status'],
+                                        ...students.map(s => [
+                                            s.student_id,
+                                            `${s.first_name} ${s.last_name}`,
+                                            s.email || '',
+                                            s.program || '',
+                                            s.year_level || '',
+                                            s.section || '',
+                                            s.status || ''
+                                        ])
+                                    ].map(row => row.join(',')).join('\n');
+                                    
+                                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `students_report_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.click();
+                                }}
+                                style={{
+                                    background: '#10b981',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 8,
+                                    padding: '10px 20px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                Export to CSV
+                            </button>
+                            <button
+                                onClick={() => setShowReportLogs(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: 8,
+                                    padding: '10px 20px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '14px',
+                                    color: '#374151'
+                                }}
+                            >
+                                Close
                             </button>
                         </div>
                     </div>

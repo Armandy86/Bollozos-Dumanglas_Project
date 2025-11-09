@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\facultyController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,3 +32,5 @@ Route::post('/faculty', [facultyController::class, 'apiStore']);
 Route::get('/faculty/{id}', [facultyController::class, 'apiShow']);
 Route::put('/faculty/{id}', [facultyController::class, 'apiUpdate']);
 Route::delete('/faculty/{id}', [facultyController::class, 'apiDestroy']);
+
+Route::post('/user/change-password', [UserController::class, 'changePassword']);

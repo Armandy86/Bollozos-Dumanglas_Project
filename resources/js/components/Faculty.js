@@ -424,7 +424,7 @@ export default function Faculty({ onSuccess, showForm = true, showList = true, e
                         </div>
                     </div>
                     <div>
-                        <h3 style={{ margin: '0 0 8px 0', color: '#a3a3a3' }}>Academic Information</h3>
+                        <h3 style={{ margin: '0 0 8px 0', color: '#a3a3a3' }}>Professional Information</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <select
                                 name="department"
@@ -438,13 +438,16 @@ export default function Faculty({ onSuccess, showForm = true, showList = true, e
                                 ))}
                             </select>
 
-                            <input
-                                placeholder="Position"
+                            <select
                                 name="position"
                                 value={formData.position}
                                 onChange={handleInputChange}
                                 style={inputStyle}
-                            />
+                            >
+                                <option value="">Select Position</option>
+                                <option value="Full Time Instructor">Full Time Instructor</option>
+                                <option value="Part Time Instructor">Part Time Instructor</option>
+                            </select>
 
                             <input
                                 placeholder="Attainment"

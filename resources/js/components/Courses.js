@@ -135,20 +135,6 @@ export default function Courses() {
 
     return (
         <>
-            <style>
-                {`
-                    @keyframes fadeInUp {
-                        from {
-                            opacity: 0;
-                            transform: translateY(20px);
-                        }
-                        to {
-                            opacity: 1;
-                            transform: translateY(0);
-                        }
-                    }
-                `}
-            </style>
             <div style={{ 
                 padding: '48px 80px', 
                 background: '#f5f7fa', 
@@ -343,10 +329,7 @@ export default function Courses() {
                         background: 'white',
                         borderRadius: 12,
                         maxWidth: 1200,
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                        opacity: 0,
-                        transform: 'translateY(20px)',
-                        animation: 'fadeInUp 0.6s ease-out forwards'
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -396,131 +379,143 @@ export default function Courses() {
                             </div>
                         </div>
 
-                        {/* Debug Information */}
+                        {/* Table */}
                         <div style={{ 
-                            background: '#f9fafb', 
-                            border: '1px solid #e5e7eb', 
-                            borderRadius: '8px', 
-                            padding: '12px', 
-                            marginBottom: '16px',
-                            fontSize: '12px',
-                            color: '#6b7280'
+                            background: 'white',
+                            borderRadius: '12px',
+                            border: '1px solid #e5e7eb',
+                            overflow: 'hidden'
                         }}>
-                            <strong>Debug Info:</strong><br/>
-                            Program DB Name: {program?.dbName}<br/>
-                            Total Students: {students.length}<br/>
-                            Total Faculty: {faculty.length}<br/>
-                            Program Students: {programStudents.length}<br/>
-                            Program Faculty: {programFaculty.length}
-                        </div>
-
-                        {allMembers.length === 0 ? (
-                            <div style={{ 
-                                textAlign: 'center', 
-                                padding: '40px 20px',
-                                color: '#6b7280'
+                            <table style={{ 
+                                width: '100%', 
+                                borderCollapse: 'collapse'
                             }}>
-                                <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
-                                <p style={{ margin: 0, fontSize: '16px' }}>
-                                    No students or faculty members found for this program.
-                                </p>
-                            </div>
-                        ) : (
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-                                gap: '16px',
-                                maxHeight: '500px',
-                                overflowY: 'auto'
-                            }}>
-                                {allMembers.map((member, index) => (
-                                    <div
-                                        key={`${member.type}-${member.id || index}`}
-                                        style={{
-                                            background: member.type === 'student' ? '#f0f9ff' : '#fef3c7',
-                                            border: member.type === 'student' ? '1px solid #0ea5e9' : '1px solid #f59e0b',
-                                            borderRadius: '8px',
-                                            padding: '16px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            opacity: 0,
-                                            transform: 'translateY(20px)',
-                                            animation: `fadeInUp 0.4s ease-out ${index * 0.1}s forwards`,
-                                            transition: 'all 0.3s ease'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-4px)';
-                                            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = 'none';
-                                        }}
-                                    >
-                                        <div style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '50%',
-                                            background: member.type === 'student' ? '#0ea5e9' : '#f59e0b',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: 'white',
-                                            fontWeight: '600',
-                                            fontSize: '16px'
-                                        }}>
-                                            {member.type === 'student' ? '' : ''}
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ 
-                                                fontWeight: '600', 
-                                                color: '#1a1a1a',
-                                                marginBottom: '4px'
-                                            }}>
-                                                {member.first_name} {member.last_name}
-                                            </div>
-                                            <div style={{ 
-                                                fontSize: '14px', 
+                                <thead>
+                                    <tr style={{ 
+                                        background: '#f9fafb',
+                                        borderBottom: '1px solid #e5e7eb'
+                                    }}>
+                                        <th style={{
+                                            padding: '14px 20px',
+                                            textAlign: 'left',
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            color: '#4b5563',
+                                            textTransform: 'none'
+                                        }}>Name</th>
+                                        <th style={{
+                                            padding: '14px 20px',
+                                            textAlign: 'left',
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            color: '#4b5563',
+                                            textTransform: 'none'
+                                        }}>ID</th>
+                                        <th style={{
+                                            padding: '14px 20px',
+                                            textAlign: 'left',
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            color: '#4b5563',
+                                            textTransform: 'none'
+                                        }}>Email address</th>
+                                        <th style={{
+                                            padding: '14px 20px',
+                                            textAlign: 'left',
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            color: '#4b5563',
+                                            textTransform: 'none'
+                                        }}>Type</th>
+                                        <th style={{
+                                            padding: '14px 20px',
+                                            textAlign: 'left',
+                                            fontSize: 13,
+                                            fontWeight: 600,
+                                            color: '#4b5563',
+                                            textTransform: 'none'
+                                        }}>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {allMembers.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="5" style={{ 
+                                                padding: 40, 
+                                                textAlign: 'center',
                                                 color: '#6b7280',
-                                                marginBottom: '2px'
+                                                fontSize: 14
                                             }}>
-                                                {member.type === 'student' ? `Student ID: ${member.student_id}` : `Faculty ID: ${member.faculty_id}`}
-                                            </div>
-                                            <div style={{ 
-                                                fontSize: '12px', 
-                                                color: '#9ca3af'
-                                            }}>
-                                                {member.type === 'student' 
-                                                    ? `${member.program} • ${member.year_level || 'N/A'} • ${member.section || 'N/A'}`
-                                                    : `${member.department} • ${member.position || 'N/A'}`
-                                                }
-                                            </div>
-                                            {member.email && (
-                                                <div style={{ 
-                                                    fontSize: '12px', 
-                                                    color: '#6b7280',
-                                                    marginTop: '4px'
+                                                No students or faculty members found for this program.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        allMembers.map((member, index) => (
+                                            <tr 
+                                                key={`${member.type}-${member.id || index}`}
+                                                style={{
+                                                    background: 'white',
+                                                    borderBottom: '1px solid #f3f4f6',
+                                                    transition: 'background 0.15s'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                            >
+                                                <td style={{
+                                                    padding: '16px 20px',
+                                                    fontSize: 14,
+                                                    color: '#1f2937',
+                                                    fontWeight: 500
                                                 }}>
-                                                    📧 {member.email}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div style={{
-                                            background: member.type === 'student' ? '#dcfce7' : '#fef3c7',
-                                            color: member.type === 'student' ? '#166534' : '#92400e',
-                                            padding: '4px 8px',
-                                            borderRadius: '12px',
-                                            fontSize: '11px',
-                                            fontWeight: '600',
-                                            textTransform: 'uppercase'
-                                        }}>
-                                            {member.type}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                                    {member.first_name} {member.last_name}
+                                                </td>
+                                                <td style={{
+                                                    padding: '16px 20px',
+                                                    fontSize: 14,
+                                                    color: '#1f2937'
+                                                }}>
+                                                    {member.type === 'student' ? member.student_id : member.faculty_id}
+                                                </td>
+                                                <td style={{
+                                                    padding: '16px 20px',
+                                                    fontSize: 14,
+                                                    color: '#1f2937'
+                                                }}>
+                                                    {member.email || '—'}
+                                                </td>
+                                                <td style={{
+                                                    padding: '16px 20px',
+                                                    fontSize: 14,
+                                                    color: '#1f2937'
+                                                }}>
+                                                    <span style={{
+                                                        background: member.type === 'student' ? '#dbeafe' : '#fef3c7',
+                                                        color: member.type === 'student' ? '#1e40af' : '#92400e',
+                                                        padding: '4px 10px',
+                                                        borderRadius: '12px',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600',
+                                                        textTransform: 'uppercase'
+                                                    }}>
+                                                        {member.type}
+                                                    </span>
+                                                </td>
+                                                <td style={{
+                                                    padding: '16px 20px',
+                                                    fontSize: 13,
+                                                    color: '#6b7280'
+                                                }}>
+                                                    {member.type === 'student' 
+                                                        ? `${member.year_level || 'N/A'} • ${member.section || 'N/A'}`
+                                                        : `${member.position || 'N/A'}`
+                                                    }
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 );
             })()}

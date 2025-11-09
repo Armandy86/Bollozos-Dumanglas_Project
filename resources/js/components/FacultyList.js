@@ -17,6 +17,7 @@ export default function FacultyList({ onDataUpdate }) {
     const [editValue, setEditValue] = useState('');
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [pendingChanges, setPendingChanges] = useState({});
+    const [showReportLogs, setShowReportLogs] = useState(false);
 
     const fetchFaculty = async () => {
         try {
@@ -290,30 +291,56 @@ export default function FacultyList({ onDataUpdate }) {
                 <div style={{ fontSize: '18px', fontWeight: '600', color: '#374151' }}>
                     Faculty ({filteredFaculty.length})
                 </div>
-                <button 
-                    onClick={openAddFaculty}
-                    style={{
-                        background: '#16a34a',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 8,
-                        padding: '10px 20px',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.target.style.background = '#15803d'}
-                    onMouseLeave={(e) => e.target.style.background = '#16a34a'}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Add Faculty
-                </button>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <button 
+                        onClick={() => setShowReportLogs(true)}
+                        style={{
+                            background: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 8,
+                            padding: '10px 20px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Report Logs
+                    </button>
+                    <button 
+                        onClick={openAddFaculty}
+                        style={{
+                            background: '#16a34a',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 8,
+                            padding: '10px 20px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#15803d'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#16a34a'}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        Add Faculty
+                    </button>
+                </div>
             </div>
 
             {/* Table */}
@@ -1460,7 +1487,7 @@ export default function FacultyList({ onDataUpdate }) {
                                         </div>
                                     </div>
                                     <div>
-                                        <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Academic Information</h3>
+                                        <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Professional Information</h3>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             <div>
                                                 <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>Department:</label>
@@ -1707,6 +1734,202 @@ export default function FacultyList({ onDataUpdate }) {
                                 }}
                             >
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Report Logs Modal */}
+            {showReportLogs && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: 12,
+                        padding: 32,
+                        maxWidth: 900,
+                        width: '90%',
+                        maxHeight: '80vh',
+                        overflow: 'auto',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#111827', margin: 0 }}>
+                                Faculty Report Logs
+                            </h2>
+                            <button
+                                onClick={() => setShowReportLogs(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: 8,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#6b7280'
+                                }}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: 24 }}>
+                            <p style={{ color: '#6b7280', margin: 0, lineHeight: '1.6' }}>
+                                View and export faculty activity logs including additions, modifications, and deletions.
+                            </p>
+                        </div>
+
+                        {/* Stats Cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+                            <div style={{
+                                background: '#f0fdf4',
+                                border: '1px solid #86efac',
+                                borderRadius: 8,
+                                padding: 16,
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#16a34a', marginBottom: 4 }}>
+                                    {faculty.length}
+                                </div>
+                                <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
+                                    Total Faculty
+                                </div>
+                            </div>
+                            <div style={{
+                                background: '#dbeafe',
+                                border: '1px solid #93c5fd',
+                                borderRadius: 8,
+                                padding: 16,
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#2563eb', marginBottom: 4 }}>
+                                    {faculty.filter(f => f.position === 'Full Time Instructor').length}
+                                </div>
+                                <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
+                                    Full Time
+                                </div>
+                            </div>
+                            <div style={{
+                                background: '#fef3c7',
+                                border: '1px solid #fcd34d',
+                                borderRadius: 8,
+                                padding: 16,
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '28px', fontWeight: '700', color: '#d97706', marginBottom: 4 }}>
+                                    {faculty.filter(f => f.position === 'Part Time Instructor').length}
+                                </div>
+                                <div style={{ fontSize: '13px', color: '#6b7280', fontWeight: '500' }}>
+                                    Part Time
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Department Distribution */}
+                        <div style={{
+                            background: '#f9fafb',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 8,
+                            padding: 20,
+                            marginBottom: 24
+                        }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#374151', margin: '0 0 16px 0' }}>
+                                Department Distribution
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {[...new Set(faculty.map(f => f.department))].filter(d => d).map((department, index) => {
+                                    const count = faculty.filter(f => f.department === department).length;
+                                    const percentage = ((count / faculty.length) * 100).toFixed(1);
+                                    return (
+                                        <div key={index}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                                <span style={{ fontSize: '14px', color: '#374151', fontWeight: '500' }}>{department}</span>
+                                                <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: '600' }}>{count} ({percentage}%)</span>
+                                            </div>
+                                            <div style={{ width: '100%', height: 8, background: '#e5e7eb', borderRadius: 4, overflow: 'hidden' }}>
+                                                <div style={{ width: `${percentage}%`, height: '100%', background: '#8b5cf6', borderRadius: 4 }}></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Export Button */}
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                            <button
+                                onClick={() => {
+                                    const csvContent = [
+                                        ['Faculty ID', 'Name', 'Email', 'Department', 'Position', 'Attainment', 'Phone'],
+                                        ...faculty.map(f => [
+                                            f.faculty_id,
+                                            `${f.first_name} ${f.last_name}`,
+                                            f.email || '',
+                                            f.department || '',
+                                            f.position || '',
+                                            f.attainment || '',
+                                            f.phone || ''
+                                        ])
+                                    ].map(row => row.join(',')).join('\n');
+                                    
+                                    const blob = new Blob([csvContent], { type: 'text/csv' });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `faculty_report_${new Date().toISOString().split('T')[0]}.csv`;
+                                    a.click();
+                                }}
+                                style={{
+                                    background: '#10b981',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: 8,
+                                    padding: '10px 20px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    transition: 'all 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = '#10b981'}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                                Export to CSV
+                            </button>
+                            <button
+                                onClick={() => setShowReportLogs(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: 8,
+                                    padding: '10px 20px',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '14px',
+                                    color: '#374151'
+                                }}
+                            >
+                                Close
                             </button>
                         </div>
                     </div>
@@ -1974,7 +2197,7 @@ function AddFacultyForm({ onSuccess }) {
                     </div>
 
                     <div>
-                        <h3 style={{ margin: '0 0 8px 0', color: '#a3a3a3' }}>Academic Information</h3>
+                        <h3 style={{ margin: '0 0 8px 0', color: '#a3a3a3' }}>Professional Information</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <select
                                 name="department"
@@ -1988,13 +2211,16 @@ function AddFacultyForm({ onSuccess }) {
                                 ))}
                             </select>
                             
-                            <input
-                                placeholder="Position"
+                            <select
                                 name="position"
                                 value={formData.position}
                                 onChange={handleInputChange}
                                 style={inputStyle}
-                            />
+                            >
+                                <option value="">Select Position</option>
+                                <option value="Full Time Instructor">Full Time Instructor</option>
+                                <option value="Part Time Instructor">Part Time Instructor</option>
+                            </select>
                             
                             <input
                                 placeholder="Educational Attainment"
