@@ -13,4 +13,22 @@ const mix = require('laravel-mix');
 
 mix.js('resources/js/app.js', 'public/js')
     .react()
-    .sass('resources/sass/app.scss', 'public/css');
+    .sass('resources/sass/app.scss', 'public/css')
+    .webpackConfig({
+        optimization: {
+            minimize: true
+        }
+    })
+    .options({
+        terser: {
+            terserOptions: {
+                format: {
+                    comments: false,
+                },
+                compress: {
+                    drop_console: false
+                }
+            },
+            extractComments: false,
+        }
+    });

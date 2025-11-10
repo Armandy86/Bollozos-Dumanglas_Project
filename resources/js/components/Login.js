@@ -24,21 +24,38 @@ export default function Login() {
         setIsLoading(true);
         setError('');
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            // Call login API
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password
+                })
+            });
 
-        // Check credentials
-        if (formData.email === 'admin' && formData.password === 'admin123') {
-            // Store login state in localStorage
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userEmail', formData.email);
-            
-            // Redirect to dashboard
-            window.location.href = '/';
-        } else {
-            setError('Invalid email or password. Please try again.');
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Store login state in localStorage
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userEmail', data.user.email);
+                localStorage.setItem('userName', data.user.name);
+                
+                // Redirect to dashboard
+                window.location.href = '/';
+            } else {
+                setError(data.message || 'Invalid email or password. Please try again.');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            setError('An error occurred during login. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
-        
-        setIsLoading(false);
     };
 
     return (

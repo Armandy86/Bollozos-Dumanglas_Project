@@ -2,24 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Department;
+use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 
-class DepartmentController extends Controller
+class AcademicYearController extends Controller
 {
     /**
-     * Get all departments
+     * Get all academic years
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function apiIndex()
     {
-        $departments = Department::orderBy('name')->get();
-        return response()->json($departments);
+        $academicYears = AcademicYear::orderBy('year_start', 'desc')->get();
+        return response()->json($academicYears);
     }
 
     /**
-     * Store a new department
+     * Store a new academic year
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -28,47 +28,48 @@ class DepartmentController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => ['required', 'string', 'max:255', 'unique:department,name'],
+                'year_start' => ['required', 'string', 'max:255'],
+                'year_end' => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],
             ]);
 
-            $department = Department::create($validated);
+            $academicYear = AcademicYear::create($validated);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Department created successfully',
-                'data' => $department
+                'message' => 'Academic year created successfully',
+                'data' => $academicYear
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create department: ' . $e->getMessage()
+                'message' => 'Failed to create academic year: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Get a specific department
+     * Get a specific academic year
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function apiShow($id)
     {
-        $department = Department::find($id);
+        $academicYear = AcademicYear::find($id);
         
-        if (!$department) {
+        if (!$academicYear) {
             return response()->json([
                 'success' => false,
-                'message' => 'Department not found'
+                'message' => 'Academic year not found'
             ], 404);
         }
 
-        return response()->json($department);
+        return response()->json($academicYear);
     }
 
     /**
-     * Update a department
+     * Update an academic year
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -77,38 +78,39 @@ class DepartmentController extends Controller
     public function apiUpdate(Request $request, $id)
     {
         try {
-            $department = Department::find($id);
+            $academicYear = AcademicYear::find($id);
             
-            if (!$department) {
+            if (!$academicYear) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Department not found'
+                    'message' => 'Academic year not found'
                 ], 404);
             }
 
             $validated = $request->validate([
-                'name' => ['required', 'string', 'max:255', 'unique:department,name,' . $id],
+                'year_start' => ['required', 'string', 'max:255'],
+                'year_end' => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],
                 'is_archived' => ['nullable', 'boolean'],
             ]);
 
-            $department->update($validated);
+            $academicYear->update($validated);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Department updated successfully',
-                'data' => $department
+                'message' => 'Academic year updated successfully',
+                'data' => $academicYear
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update department: ' . $e->getMessage()
+                'message' => 'Failed to update academic year: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Archive/Unarchive a department
+     * Archive/Unarchive an academic year
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -116,33 +118,33 @@ class DepartmentController extends Controller
     public function apiArchive($id)
     {
         try {
-            $department = Department::find($id);
+            $academicYear = AcademicYear::find($id);
             
-            if (!$department) {
+            if (!$academicYear) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Department not found'
+                    'message' => 'Academic year not found'
                 ], 404);
             }
 
-            $department->is_archived = !$department->is_archived;
-            $department->save();
+            $academicYear->is_archived = !$academicYear->is_archived;
+            $academicYear->save();
 
             return response()->json([
                 'success' => true,
-                'message' => $department->is_archived ? 'Department archived successfully' : 'Department unarchived successfully',
-                'data' => $department
+                'message' => $academicYear->is_archived ? 'Academic year archived successfully' : 'Academic year unarchived successfully',
+                'data' => $academicYear
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to archive department: ' . $e->getMessage()
+                'message' => 'Failed to archive academic year: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Delete a department
+     * Delete an academic year
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -150,27 +152,26 @@ class DepartmentController extends Controller
     public function apiDestroy($id)
     {
         try {
-            $department = Department::find($id);
+            $academicYear = AcademicYear::find($id);
             
-            if (!$department) {
+            if (!$academicYear) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Department not found'
+                    'message' => 'Academic year not found'
                 ], 404);
             }
 
-            $department->delete();
+            $academicYear->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Department deleted successfully'
+                'message' => 'Academic year deleted successfully'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete department: ' . $e->getMessage()
+                'message' => 'Failed to delete academic year: ' . $e->getMessage()
             ], 500);
         }
     }
 }
-

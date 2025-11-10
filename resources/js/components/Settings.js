@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import ManageDepartments from './ManageDepartments';
 
 export default function Settings() {
     const [theme, setTheme] = useState('light');
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [showDepartmentsModal, setShowDepartmentsModal] = useState(false);
     const [passwordForm, setPasswordForm] = useState({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
     });
+    const [profileForm, setProfileForm] = useState({
+        name: '',
+        username: '',
+        bio: ''
+    });
     const [passwordError, setPasswordError] = useState('');
     const [passwordSuccess, setPasswordSuccess] = useState('');
+    const [profileError, setProfileError] = useState('');
+    const [profileSuccess, setProfileSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isProfileLoading, setIsProfileLoading] = useState(false);
 
     // Load theme from localStorage on component mount
     useEffect(() => {
@@ -91,7 +102,13 @@ export default function Settings() {
                     setPasswordSuccess('');
                 }, 2000);
             } else {
-                setPasswordError(data.message || 'Failed to change password');
+                // Show detailed validation errors if available
+                if (data.errors) {
+                    const errorMessages = Object.values(data.errors).flat().join('. ');
+                    setPasswordError(errorMessages || data.message || 'Failed to change password');
+                } else {
+                    setPasswordError(data.message || 'Failed to change password');
+                }
             }
         } catch (error) {
             console.error('Error changing password:', error);
@@ -113,7 +130,119 @@ export default function Settings() {
         });
     };
 
+    // Function to fetch user profile
+    const fetchProfile = async () => {
+        try {
+            const userEmail = localStorage.getItem('userEmail');
+            if (!userEmail) {
+                setProfileError('User email not found. Please login again.');
+                return;
+            }
+
+            const response = await fetch(`/api/profile?email=${encodeURIComponent(userEmail)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setProfileForm({
+                    name: data.data.name || '',
+                    username: data.data.email || '',
+                    bio: data.data.bio || ''
+                });
+            } else {
+                setProfileError(data.message || 'Failed to fetch profile');
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+            setProfileError('An error occurred while fetching profile');
+        }
+    };
+
+    // Function to open profile modal
+    const openProfileModal = async () => {
+        setShowProfileModal(true);
+        setProfileError('');
+        setProfileSuccess('');
+        await fetchProfile();
+    };
+
+    // Function to handle profile update
+    const handleProfileUpdate = async (e) => {
+        e.preventDefault();
+        setProfileError('');
+        setProfileSuccess('');
+
+        // Validation
+        if (!profileForm.name || !profileForm.username) {
+            setProfileError('Name and username are required');
+            return;
+        }
+
+        setIsProfileLoading(true);
+
+        try {
+            const currentEmail = localStorage.getItem('userEmail');
+            if (!currentEmail) {
+                setProfileError('User email not found. Please login again.');
+                setIsProfileLoading(false);
+                return;
+            }
+
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_email: currentEmail,
+                    name: profileForm.name,
+                    email: profileForm.username,
+                    bio: profileForm.bio
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                setProfileSuccess('Profile updated successfully!');
+                // Update username in localStorage if changed
+                if (profileForm.username !== currentEmail) {
+                    localStorage.setItem('userEmail', profileForm.username);
+                }
+                setTimeout(() => {
+                    setShowProfileModal(false);
+                    setProfileSuccess('');
+                }, 2000);
+            } else {
+                setProfileError(data.message || 'Failed to update profile');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            setProfileError('An error occurred while updating profile');
+        } finally {
+            setIsProfileLoading(false);
+        }
+    };
+
     const settingsOptions = [
+        {
+            id: 'edit-profile',
+            icon: (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            ),
+            iconBg: theme === 'dark' ? '#374151' : '#DBEAFE',
+            title: 'Edit Profile',
+            description: 'Update your personal information and profile details.',
+            action: openProfileModal
+        },
         {
             id: 'change-password',
             icon: (
@@ -128,11 +257,23 @@ export default function Settings() {
             action: openPasswordModal
         },
         {
+            id: 'manage-departments',
+            icon: (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+            ),
+            iconBg: theme === 'dark' ? '#374151' : '#FED7AA',
+            title: 'Manage Departments',
+            description: 'Add, edit, and archive department information.',
+            action: () => setShowDepartmentsModal(true)
+        },
+        {
             id: 'change-theme',
             icon: (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" strokeWidth="2">
                     {theme === 'dark' ? (
-                        // Sun icon for dark mode
                         <>
                             <circle cx="12" cy="12" r="5"/>
                             <line x1="12" y1="1" x2="12" y2="3"/>
@@ -145,7 +286,6 @@ export default function Settings() {
                             <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
                         </>
                     ) : (
-                        // Moon icon for light mode
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                     )}
                 </svg>
@@ -169,10 +309,8 @@ export default function Settings() {
             description: 'Securely sign out of your account.',
             action: () => {
                 if (confirm('Are you sure you want to logout?')) {
-                    // Clear authentication data
                     localStorage.removeItem('isLoggedIn');
                     localStorage.removeItem('userEmail');
-                    // Redirect to login page
                     window.location.href = '/login';
                 }
             }
@@ -207,7 +345,7 @@ export default function Settings() {
                     margin: '12px 0 0 0',
                     transition: 'color 0.3s ease'
                 }}>
-                    Allows the user to change their account password, 
+                    Manage your profile information, update your account password, 
                     switch between light and dark themes, and securely log out of the system.
                 </p>
             </div>
@@ -568,6 +706,298 @@ export default function Settings() {
                     </div>
                 </div>
             )}
+
+            {/* Profile Edit Modal */}
+            {showProfileModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(4px)',
+                    overflowY: 'auto'
+                }}>
+                    <div style={{
+                        background: 'var(--card-bg)',
+                        borderRadius: 16,
+                        padding: 40,
+                        maxWidth: 500,
+                        width: '90%',
+                        boxShadow: 'var(--shadow-lg)',
+                        border: '1px solid var(--border-primary)',
+                        transition: 'all 0.3s ease',
+                        margin: '20px 0'
+                    }}>
+                        {/* Modal Header */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: 24
+                        }}>
+                            <h2 style={{
+                                fontSize: 24,
+                                fontWeight: 700,
+                                color: 'var(--text-primary)',
+                                margin: 0,
+                                transition: 'color 0.3s ease'
+                            }}>
+                                Edit Profile
+                            </h2>
+                            <button
+                                onClick={() => setShowProfileModal(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: 8,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--text-secondary)',
+                                    transition: 'color 0.3s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Success Message */}
+                        {profileSuccess && (
+                            <div style={{
+                                background: '#D1FAE5',
+                                border: '1px solid #10B981',
+                                color: '#065F46',
+                                padding: 12,
+                                borderRadius: 8,
+                                marginBottom: 20,
+                                fontSize: 14,
+                                fontWeight: 500
+                            }}>
+                                ✓ {profileSuccess}
+                            </div>
+                        )}
+
+                        {/* Error Message */}
+                        {profileError && (
+                            <div style={{
+                                background: '#FEE2E2',
+                                border: '1px solid #EF4444',
+                                color: '#991B1B',
+                                padding: 12,
+                                borderRadius: 8,
+                                marginBottom: 20,
+                                fontSize: 14,
+                                fontWeight: 500
+                            }}>
+                                ✕ {profileError}
+                            </div>
+                        )}
+
+                        {/* Profile Form */}
+                        <form onSubmit={handleProfileUpdate}>
+                            {/* Name */}
+                            <div style={{ marginBottom: 20 }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    color: 'var(--text-primary)',
+                                    marginBottom: 8,
+                                    transition: 'color 0.3s ease'
+                                }}>
+                                    Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={profileForm.name}
+                                    onChange={(e) => setProfileForm({...profileForm, name: e.target.value})}
+                                    placeholder="Enter your name"
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 16px',
+                                        border: '1px solid var(--border-primary)',
+                                        borderRadius: 8,
+                                        fontSize: 14,
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
+                                        transition: 'all 0.3s ease',
+                                        outline: 'none'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor = 'var(--accent-primary)';
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = 'var(--border-primary)';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+
+                            {/* Username */}
+                            <div style={{ marginBottom: 20 }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    color: 'var(--text-primary)',
+                                    marginBottom: 8,
+                                    transition: 'color 0.3s ease'
+                                }}>
+                                    Username (Login) *
+                                </label>
+                                <input
+                                    type="text"
+                                    value={profileForm.username}
+                                    onChange={(e) => setProfileForm({...profileForm, username: e.target.value})}
+                                    placeholder="Enter your username"
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 16px',
+                                        border: '1px solid var(--border-primary)',
+                                        borderRadius: 8,
+                                        fontSize: 14,
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
+                                        transition: 'all 0.3s ease',
+                                        outline: 'none'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor = 'var(--accent-primary)';
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = 'var(--border-primary)';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+
+                            {/* Description/Bio */}
+                            <div style={{ marginBottom: 28 }}>
+                                <label style={{
+                                    display: 'block',
+                                    fontSize: 14,
+                                    fontWeight: 600,
+                                    color: 'var(--text-primary)',
+                                    marginBottom: 8,
+                                    transition: 'color 0.3s ease'
+                                }}>
+                                    Description
+                                </label>
+                                <textarea
+                                    value={profileForm.bio}
+                                    onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})}
+                                    placeholder="Tell us about yourself"
+                                    rows="4"
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 16px',
+                                        border: '1px solid var(--border-primary)',
+                                        borderRadius: 8,
+                                        fontSize: 14,
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
+                                        transition: 'all 0.3s ease',
+                                        outline: 'none',
+                                        resize: 'vertical',
+                                        fontFamily: 'inherit'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor = 'var(--accent-primary)';
+                                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = 'var(--border-primary)';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+
+                            {/* Form Actions */}
+                            <div style={{
+                                display: 'flex',
+                                gap: 12,
+                                justifyContent: 'flex-end',
+                                marginTop: 28
+                            }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowProfileModal(false)}
+                                    style={{
+                                        padding: '12px 24px',
+                                        border: '1px solid var(--border-primary)',
+                                        borderRadius: 8,
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'var(--hover-bg)';
+                                        e.currentTarget.style.borderColor = 'var(--border-secondary)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'var(--bg-secondary)';
+                                        e.currentTarget.style.borderColor = 'var(--border-primary)';
+                                    }}
+                                    disabled={isProfileLoading}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    style={{
+                                        padding: '12px 24px',
+                                        border: 'none',
+                                        borderRadius: 8,
+                                        background: isProfileLoading ? '#9CA3AF' : '#6366F1',
+                                        color: 'white',
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                        cursor: isProfileLoading ? 'not-allowed' : 'pointer',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!isProfileLoading) {
+                                            e.currentTarget.style.background = '#4F46E5';
+                                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!isProfileLoading) {
+                                            e.currentTarget.style.background = '#6366F1';
+                                            e.currentTarget.style.boxShadow = 'none';
+                                        }
+                                    }}
+                                    disabled={isProfileLoading}
+                                >
+                                    {isProfileLoading ? 'Updating...' : 'Update Profile'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Management Modals */}
+            <ManageDepartments show={showDepartmentsModal} onClose={() => setShowDepartmentsModal(false)} />
         </div>
     );
 }

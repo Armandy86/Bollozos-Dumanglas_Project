@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Department extends Model
+class AcademicYear extends Model
 {
     use HasFactory;
 
@@ -14,7 +14,7 @@ class Department extends Model
      *
      * @var string
      */
-    protected $table = 'department';
+    protected $table = 'academic_years';
 
     /**
      * The attributes that are mass assignable.
@@ -22,9 +22,9 @@ class Department extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'year_start',
+        'year_end',
         'description',
         'is_archived',
     ];
 }
-

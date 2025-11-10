@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Department extends Model
+class Course extends Model
 {
     use HasFactory;
 
@@ -14,7 +14,7 @@ class Department extends Model
      *
      * @var string
      */
-    protected $table = 'department';
+    protected $table = 'courses';
 
     /**
      * The attributes that are mass assignable.
@@ -22,9 +22,18 @@ class Department extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'course_code',
+        'course_name',
         'description',
+        'department_id',
         'is_archived',
     ];
-}
 
+    /**
+     * Get the department that the course belongs to.
+     */
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+}

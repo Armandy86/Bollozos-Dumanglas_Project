@@ -2,24 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Course;
 use App\Models\Department;
 use Illuminate\Http\Request;
 
-class DepartmentController extends Controller
+class CourseController extends Controller
 {
     /**
-     * Get all departments
+     * Get all courses
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function apiIndex()
     {
-        $departments = Department::orderBy('name')->get();
-        return response()->json($departments);
+        $courses = Course::with('department')->orderBy('course_code')->get();
+        return response()->json($courses);
     }
 
     /**
-     * Store a new department
+     * Store a new course
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
@@ -28,47 +29,49 @@ class DepartmentController extends Controller
     {
         try {
             $validated = $request->validate([
-                'name' => ['required', 'string', 'max:255', 'unique:department,name'],
+                'course_code' => ['required', 'string', 'max:255', 'unique:courses,course_code'],
+                'course_name' => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],
+                'department_id' => ['nullable', 'exists:department,id'],
             ]);
 
-            $department = Department::create($validated);
+            $course = Course::create($validated);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Department created successfully',
-                'data' => $department
+                'message' => 'Course created successfully',
+                'data' => $course->load('department')
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create department: ' . $e->getMessage()
+                'message' => 'Failed to create course: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Get a specific department
+     * Get a specific course
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function apiShow($id)
     {
-        $department = Department::find($id);
+        $course = Course::with('department')->find($id);
         
-        if (!$department) {
+        if (!$course) {
             return response()->json([
                 'success' => false,
-                'message' => 'Department not found'
+                'message' => 'Course not found'
             ], 404);
         }
 
-        return response()->json($department);
+        return response()->json($course);
     }
 
     /**
-     * Update a department
+     * Update a course
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -77,38 +80,40 @@ class DepartmentController extends Controller
     public function apiUpdate(Request $request, $id)
     {
         try {
-            $department = Department::find($id);
+            $course = Course::find($id);
             
-            if (!$department) {
+            if (!$course) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Department not found'
+                    'message' => 'Course not found'
                 ], 404);
             }
 
             $validated = $request->validate([
-                'name' => ['required', 'string', 'max:255', 'unique:department,name,' . $id],
+                'course_code' => ['required', 'string', 'max:255', 'unique:courses,course_code,' . $id],
+                'course_name' => ['required', 'string', 'max:255'],
                 'description' => ['nullable', 'string'],
+                'department_id' => ['nullable', 'exists:department,id'],
                 'is_archived' => ['nullable', 'boolean'],
             ]);
 
-            $department->update($validated);
+            $course->update($validated);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Department updated successfully',
-                'data' => $department
+                'message' => 'Course updated successfully',
+                'data' => $course->load('department')
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update department: ' . $e->getMessage()
+                'message' => 'Failed to update course: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Archive/Unarchive a department
+     * Archive/Unarchive a course
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -116,33 +121,33 @@ class DepartmentController extends Controller
     public function apiArchive($id)
     {
         try {
-            $department = Department::find($id);
+            $course = Course::find($id);
             
-            if (!$department) {
+            if (!$course) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Department not found'
+                    'message' => 'Course not found'
                 ], 404);
             }
 
-            $department->is_archived = !$department->is_archived;
-            $department->save();
+            $course->is_archived = !$course->is_archived;
+            $course->save();
 
             return response()->json([
                 'success' => true,
-                'message' => $department->is_archived ? 'Department archived successfully' : 'Department unarchived successfully',
-                'data' => $department
+                'message' => $course->is_archived ? 'Course archived successfully' : 'Course unarchived successfully',
+                'data' => $course->load('department')
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to archive department: ' . $e->getMessage()
+                'message' => 'Failed to archive course: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Delete a department
+     * Delete a course
      *
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
@@ -150,27 +155,26 @@ class DepartmentController extends Controller
     public function apiDestroy($id)
     {
         try {
-            $department = Department::find($id);
+            $course = Course::find($id);
             
-            if (!$department) {
+            if (!$course) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Department not found'
+                    'message' => 'Course not found'
                 ], 404);
             }
 
-            $department->delete();
+            $course->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Department deleted successfully'
+                'message' => 'Course deleted successfully'
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete department: ' . $e->getMessage()
+                'message' => 'Failed to delete course: ' . $e->getMessage()
             ], 500);
         }
     }
 }
-

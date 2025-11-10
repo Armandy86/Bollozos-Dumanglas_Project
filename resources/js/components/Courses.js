@@ -4,13 +4,18 @@ export default function Courses() {
     const [expandedProgram, setExpandedProgram] = useState(null);
     const [students, setStudents] = useState([]);
     const [faculty, setFaculty] = useState([]);
+    const [programs, setPrograms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showStudentDetails, setShowStudentDetails] = useState(false);
     const [showFacultyDetails, setShowFacultyDetails] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [selectedFaculty, setSelectedFaculty] = useState(null);
+    const [editingField, setEditingField] = useState(null);
+    const [editValue, setEditValue] = useState('');
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [pendingChanges, setPendingChanges] = useState({});
 
-    const programs = [
+    const hardcodedPrograms = [
         {
             id: 1,
             name: 'NURSING PROGRAM',
@@ -69,6 +74,60 @@ export default function Courses() {
         }
     ];
 
+    const defaultColors = [
+        'linear-gradient(180deg, rgba(0, 0, 209, 0.80) 0%, rgba(17, 24, 39, 0.80) 100%)',
+        'linear-gradient(180deg, rgba(217, 115, 71, 0.80) 0%, rgba(17, 24, 39, 0.80) 100%)',
+        'linear-gradient(180deg, rgba(200, 78, 60, 0.80) 0%, rgba(17, 24, 39, 0.80) 100%)',
+        'linear-gradient(180deg, rgba(139, 93, 199, 0.80) 0%, rgba(17, 24, 39, 0.80) 100%)',
+        'linear-gradient(180deg, rgba(76, 175, 80, 0.80) 0%, rgba(17, 24, 39, 0.80) 100%)',
+        'linear-gradient(180deg, rgba(224, 160, 78, 0.80) 0%, rgba(17, 24, 39, 0.80) 100%)',
+        'linear-gradient(180deg, rgba(127, 196, 216, 0.80) 0%, rgba(17, 24, 39, 0.80) 100%)',
+        'linear-gradient(180deg, rgba(233, 30, 99, 0.80) 0%, rgba(17, 24, 39, 0.80) 100%)'
+    ];
+
+    const fetchDepartments = async () => {
+        try {
+            const response = await fetch('/api/departments');
+            const allDepartments = await response.json();
+            const departmentsArray = Array.isArray(allDepartments) ? allDepartments : [];
+            
+            const mergedPrograms = [];
+            
+            hardcodedPrograms.forEach((program) => {
+                const correspondingDept = departmentsArray.find(
+                    dept => dept.name.toLowerCase() === program.dbName.toLowerCase()
+                );
+                
+                if (!correspondingDept || !correspondingDept.is_archived) {
+                    mergedPrograms.push(program);
+                }
+            });
+            
+            const activeDepartments = departmentsArray.filter(dept => !dept.is_archived);
+            
+            activeDepartments.forEach((dept, index) => {
+                const existingProgram = hardcodedPrograms.find(
+                    p => p.dbName.toLowerCase() === dept.name.toLowerCase()
+                );
+                
+                if (!existingProgram) {
+                    mergedPrograms.push({
+                        id: `dept-${dept.id}`,
+                        name: dept.name.toUpperCase(),
+                        dbName: dept.name,
+                        color: defaultColors[(hardcodedPrograms.length + index) % defaultColors.length],
+                        logo: '/images/fsuu-logo.png'
+                    });
+                }
+            });
+            
+            setPrograms(mergedPrograms);
+        } catch (error) {
+            console.error('Error fetching departments:', error);
+            setPrograms(hardcodedPrograms);
+        }
+    };
+
     const fetchStudents = async () => {
         setLoading(true);
         try {
@@ -101,6 +160,7 @@ export default function Courses() {
     };
 
     useEffect(() => {
+        fetchDepartments();
         fetchStudents();
         fetchFaculty();
     }, []);
@@ -140,21 +200,195 @@ export default function Courses() {
     const openStudentDetails = (student) => {
         setSelectedStudent(student);
         setShowStudentDetails(true);
+        setPendingChanges({});
+        setHasUnsavedChanges(false);
+        setEditingField(null);
+        setEditValue('');
     };
 
     const closeStudentDetails = () => {
         setShowStudentDetails(false);
         setSelectedStudent(null);
+        setPendingChanges({});
+        setHasUnsavedChanges(false);
+        setEditingField(null);
+        setEditValue('');
     };
 
     const openFacultyDetails = (faculty) => {
         setSelectedFaculty(faculty);
         setShowFacultyDetails(true);
+        setPendingChanges({});
+        setHasUnsavedChanges(false);
+        setEditingField(null);
+        setEditValue('');
     };
 
     const closeFacultyDetails = () => {
         setShowFacultyDetails(false);
         setSelectedFaculty(null);
+        setPendingChanges({});
+        setHasUnsavedChanges(false);
+        setEditingField(null);
+        setEditValue('');
+    };
+
+    const startEdit = (field, currentValue) => {
+        setEditingField(field);
+        setEditValue(currentValue || '');
+    };
+
+    const cancelEdit = () => {
+        setEditingField(null);
+        setEditValue('');
+    };
+
+    const saveEdit = () => {
+        const currentRecord = selectedStudent || selectedFaculty;
+        if (!currentRecord || !editingField) return;
+        
+        const newPendingChanges = { ...pendingChanges, [editingField]: editValue };
+        setPendingChanges(newPendingChanges);
+        setHasUnsavedChanges(true);
+        
+        setEditingField(null);
+        setEditValue('');
+    };
+
+    const saveAllChanges = async () => {
+        const currentRecord = selectedStudent || selectedFaculty;
+        const isStudent = !!selectedStudent;
+        
+        if (!currentRecord || Object.keys(pendingChanges).length === 0) return;
+
+        try {
+            const endpoint = isStudent ? `/api/students/${currentRecord.id}` : `/api/faculty/${currentRecord.id}`;
+            const updatedData = { ...currentRecord, ...pendingChanges };
+
+            const response = await fetch(endpoint, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedData)
+            });
+
+            if (response.ok) {
+                if (isStudent) {
+                    await fetchStudents();
+                    setSelectedStudent({ ...selectedStudent, ...pendingChanges });
+                } else {
+                    await fetchFaculty();
+                    setSelectedFaculty({ ...selectedFaculty, ...pendingChanges });
+                }
+                
+                setPendingChanges({});
+                setHasUnsavedChanges(false);
+            } else {
+                console.error('Failed to save changes');
+            }
+        } catch (error) {
+            console.error('Error saving changes:', error);
+        }
+    };
+
+    const discardChanges = () => {
+        setPendingChanges({});
+        setHasUnsavedChanges(false);
+        setEditingField(null);
+        setEditValue('');
+    };
+
+    const renderEditableField = (label, field, currentRecord, type = 'text', options = null) => {
+        const displayValue = pendingChanges[field] !== undefined ? pendingChanges[field] : (currentRecord[field] || '—');
+        const isEditing = editingField === field;
+
+        return (
+            <div>
+                <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>{label}:</label>
+                {isEditing ? (
+                    <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {type === 'select' && options ? (
+                            <select
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveEdit();
+                                    if (e.key === 'Escape') cancelEdit();
+                                }}
+                                style={{
+                                    flex: 1,
+                                    padding: '6px 10px',
+                                    border: '2px solid #3b82f6',
+                                    borderRadius: '6px',
+                                    outline: 'none',
+                                    fontSize: '14px'
+                                }}
+                                autoFocus
+                            >
+                                {options.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                            </select>
+                        ) : type === 'textarea' ? (
+                            <textarea
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                rows="2"
+                                style={{
+                                    flex: 1,
+                                    padding: '6px 10px',
+                                    border: '2px solid #3b82f6',
+                                    borderRadius: '6px',
+                                    outline: 'none',
+                                    fontSize: '14px',
+                                    resize: 'vertical'
+                                }}
+                                autoFocus
+                            />
+                        ) : (
+                            <input
+                                type={type}
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveEdit();
+                                    if (e.key === 'Escape') cancelEdit();
+                                }}
+                                style={{
+                                    flex: 1,
+                                    padding: '6px 10px',
+                                    border: '2px solid #3b82f6',
+                                    borderRadius: '6px',
+                                    outline: 'none',
+                                    fontSize: '14px'
+                                }}
+                                autoFocus
+                            />
+                        )}
+                        <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
+                        <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                    </div>
+                ) : (
+                    <div 
+                        style={{ 
+                            color: '#374151', 
+                            marginTop: '4px', 
+                            cursor: 'pointer', 
+                            padding: '2px 4px', 
+                            borderRadius: '4px',
+                            backgroundColor: pendingChanges[field] !== undefined ? '#fef3c7' : 'transparent',
+                            transition: 'background-color 0.2s'
+                        }}
+                        onClick={() => startEdit(field, currentRecord[field])}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = pendingChanges[field] !== undefined ? '#fef3c7' : 'transparent'}
+                    >
+                        {displayValue}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     return (
@@ -477,7 +711,7 @@ export default function Courses() {
                                         allMembers.map((member, index) => (
                                             <tr 
                                                 key={`${member.type}-${member.id || index}`}
-                                                onClick={() => member.type === 'student' ? openStudentDetails(member) : openFacultyDetails(member)}
+                                                onDoubleClick={() => member.type === 'student' ? openStudentDetails(member) : openFacultyDetails(member)}
                                                 style={{
                                                     background: 'white',
                                                     borderBottom: '1px solid #f3f4f6',
@@ -486,6 +720,7 @@ export default function Courses() {
                                                 }}
                                                 onMouseEnter={(e) => e.currentTarget.style.background = '#f9fafb'}
                                                 onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                                title="Double-click to edit"
                                             >
                                                 <td style={{
                                                     padding: '16px 20px',
@@ -552,7 +787,7 @@ export default function Courses() {
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(0,0,0,0.5)',
+                    background: 'rgba(0,0,0,0.45)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -560,170 +795,121 @@ export default function Courses() {
                     zIndex: 1000
                 }}>
                     <div style={{
-                        width: 'min(900px, 100%)',
-                        maxHeight: '90vh',
-                        background: 'white',
+                        width: 'min(1100px, 100%)',
+                        background: '#f3f4f6',
                         borderRadius: 12,
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column'
+                        padding: 16,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
                     }}>
-                        {/* Header */}
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '20px 24px',
-                            borderBottom: '1px solid #e5e7eb'
-                        }}>
-                            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1f2937' }}>
-                                Student Details
-                            </h2>
-                            <button onClick={closeStudentDetails} style={{
-                                background: 'transparent',
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <div style={{ fontWeight: 700, fontSize: 18 }}>Student Details</div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                {hasUnsavedChanges && (
+                                    <>
+                                        <button 
+                                            onClick={saveAllChanges}
+                                            style={{
+                                                background: '#16a34a',
+                                                color: 'white',
                                 border: 'none',
-                                fontSize: '24px',
+                                                borderRadius: 8,
+                                                padding: '8px 16px',
                                 cursor: 'pointer',
-                                color: '#6b7280',
-                                padding: '4px 8px'
-                            }}>✕</button>
+                                                fontWeight: '600',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            Save Changes
+                                        </button>
+                                        <button 
+                                            onClick={discardChanges}
+                                            style={{
+                                                background: '#dc2626',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: 8,
+                                                padding: '8px 16px',
+                                                cursor: 'pointer',
+                                                fontWeight: '600',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            Discard
+                                        </button>
+                                    </>
+                                )}
+                                <button 
+                                    onClick={closeStudentDetails} 
+                                    style={{
+                                        background: 'transparent',
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: 8,
+                                        padding: '6px 10px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    ✕
+                                </button>
                         </div>
+                        </div>
+                        <div style={{ maxHeight: '75vh', overflow: 'auto' }}>
 
-                        {/* Content */}
-                        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-                                {/* Left Column - Personal Information */}
+                            <div style={{ background: '#fff', padding: '24px', borderRadius: '12px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                                 <div>
-                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
-                                        Personal Information
-                                    </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Student ID:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.student_id || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                First Name:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.first_name || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Last Name:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.last_name || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Date of Birth:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.date_of_birth || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Gender:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.gender || '—'}
-                                            </div>
-                                        </div>
+                                        <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Personal Information</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {renderEditableField('Student ID', 'student_id', selectedStudent)}
+                                            {renderEditableField('First Name', 'first_name', selectedStudent)}
+                                            {renderEditableField('Last Name', 'last_name', selectedStudent)}
+                                            {renderEditableField('Date of Birth', 'date_of_birth', selectedStudent, 'date')}
+                                            {renderEditableField('Gender', 'gender', selectedStudent, 'select', [
+                                                { value: '', label: 'Select Gender' },
+                                                { value: 'Male', label: 'Male' },
+                                                { value: 'Female', label: 'Female' },
+                                                { value: 'Other', label: 'Other' }
+                                            ])}
                                     </div>
 
-                                    {/* Contact Information */}
-                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginTop: '32px', marginBottom: '20px' }}>
-                                        Contact Information
-                                    </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Email:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.email || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Phone:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.phone || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Address:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.address || '—'}
-                                            </div>
-                                        </div>
+                                        <h3 style={{ margin: '24px 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Contact Information</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {renderEditableField('Email', 'email', selectedStudent, 'email')}
+                                            {renderEditableField('Phone', 'phone', selectedStudent)}
+                                            {renderEditableField('Address', 'address', selectedStudent, 'textarea')}
                                     </div>
                                 </div>
 
-                                {/* Right Column - Academic Information */}
                                 <div>
-                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
-                                        Academic Information
-                                    </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Program/Course:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.program || '—'}
+                                        <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Academic Information</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {renderEditableField('Program/Course', 'program', selectedStudent, 'select', [
+                                                { value: '', label: 'Select Program' },
+                                                { value: 'Nursing Program', label: 'Nursing Program' },
+                                                { value: 'Teachers Education Program', label: 'Teachers Education Program' },
+                                                { value: 'Engineering Program', label: 'Engineering Program' },
+                                                { value: 'Criminal Justice Program', label: 'Criminal Justice Program' },
+                                                { value: 'Computer Science Program', label: 'Computer Science Program' },
+                                                { value: 'Arts and Sciences Program', label: 'Arts and Sciences Program' },
+                                                { value: 'Business Administration Program', label: 'Business Administration Program' },
+                                                { value: 'Accountancy Program', label: 'Accountancy Program' }
+                                            ])}
+                                            {renderEditableField('Year Level', 'year_level', selectedStudent, 'select', [
+                                                { value: '', label: 'Select Year Level' },
+                                                { value: '1st Year', label: '1st Year' },
+                                                { value: '2nd Year', label: '2nd Year' },
+                                                { value: '3rd Year', label: '3rd Year' },
+                                                { value: '4th Year', label: '4th Year' }
+                                            ])}
+                                            {renderEditableField('Section', 'section', selectedStudent)}
+                                            {renderEditableField('Status', 'status', selectedStudent, 'select', [
+                                                { value: '', label: 'Select Status' },
+                                                { value: 'Active', label: 'Active' },
+                                                { value: 'Inactive', label: 'Inactive' }
+                                            ])}
                                             </div>
                                         </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Year Level:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.year_level || '—'}
                                             </div>
                                         </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Section:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedStudent.section || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Status:
-                                            </label>
-                                            <div>
-                                                <span style={{
-                                                    display: 'inline-block',
-                                                    padding: '4px 12px',
-                                                    borderRadius: '12px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    background: selectedStudent.status?.toLowerCase() === 'active' ? '#dcfce7' : '#fee2e2',
-                                                    color: selectedStudent.status?.toLowerCase() === 'active' ? '#166534' : '#991b1b'
-                                                }}>
-                                                    {selectedStudent.status || '—'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -734,7 +920,7 @@ export default function Courses() {
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'rgba(0,0,0,0.5)',
+                    background: 'rgba(0,0,0,0.45)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -742,170 +928,114 @@ export default function Courses() {
                     zIndex: 1000
                 }}>
                     <div style={{
-                        width: 'min(900px, 100%)',
-                        maxHeight: '90vh',
-                        background: 'white',
+                        width: 'min(1100px, 100%)',
+                        background: '#f3f4f6',
                         borderRadius: 12,
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column'
+                        padding: 16,
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
                     }}>
-                        {/* Header */}
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '20px 24px',
-                            borderBottom: '1px solid #e5e7eb'
-                        }}>
-                            <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#1f2937' }}>
-                                Faculty Details
-                            </h2>
-                            <button onClick={closeFacultyDetails} style={{
-                                background: 'transparent',
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <div style={{ fontWeight: 700, fontSize: 18 }}>Faculty Details</div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                {hasUnsavedChanges && (
+                                    <>
+                                        <button 
+                                            onClick={saveAllChanges}
+                                            style={{
+                                                background: '#16a34a',
+                                                color: 'white',
                                 border: 'none',
-                                fontSize: '24px',
+                                                borderRadius: 8,
+                                                padding: '8px 16px',
                                 cursor: 'pointer',
-                                color: '#6b7280',
-                                padding: '4px 8px'
-                            }}>✕</button>
+                                                fontWeight: '600',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            Save Changes
+                                        </button>
+                                        <button 
+                                            onClick={discardChanges}
+                                            style={{
+                                                background: '#dc2626',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: 8,
+                                                padding: '8px 16px',
+                                                cursor: 'pointer',
+                                                fontWeight: '600',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            Discard
+                                        </button>
+                                    </>
+                                )}
+                                <button 
+                                    onClick={closeFacultyDetails} 
+                                    style={{
+                                        background: 'transparent',
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: 8,
+                                        padding: '6px 10px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    ✕
+                                </button>
                         </div>
-
-                        {/* Content */}
-                        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
-                                {/* Left Column - Personal Information */}
-                                <div>
-                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
-                                        Personal Information
-                                    </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Faculty ID:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.faculty_id || '—'}
                                             </div>
-                                        </div>
+                        <div style={{ maxHeight: '75vh', overflow: 'auto' }}>
+                            <div style={{ background: '#fff', padding: '24px', borderRadius: '12px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                                         <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                First Name:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.first_name || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Last Name:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.last_name || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Date of Birth:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.date_of_birth || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Gender:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.gender || '—'}
-                                            </div>
-                                        </div>
+                                        <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Personal Information</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {renderEditableField('Faculty ID', 'faculty_id', selectedFaculty)}
+                                            {renderEditableField('First Name', 'first_name', selectedFaculty)}
+                                            {renderEditableField('Last Name', 'last_name', selectedFaculty)}
+                                            {renderEditableField('Date of Birth', 'date_of_birth', selectedFaculty, 'date')}
+                                            {renderEditableField('Gender', 'gender', selectedFaculty, 'select', [
+                                                { value: '', label: 'Select Gender' },
+                                                { value: 'Male', label: 'Male' },
+                                                { value: 'Female', label: 'Female' },
+                                                { value: 'Other', label: 'Other' }
+                                            ])}
                                     </div>
 
-                                    {/* Contact Information */}
-                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginTop: '32px', marginBottom: '20px' }}>
-                                        Contact Information
-                                    </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Email:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.email || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Phone:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.phone || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Address:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.address || '—'}
-                                            </div>
-                                        </div>
+                                        <h3 style={{ margin: '24px 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Contact Information</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {renderEditableField('Email', 'email', selectedFaculty, 'email')}
+                                            {renderEditableField('Phone', 'phone', selectedFaculty)}
+                                            {renderEditableField('Address', 'address', selectedFaculty, 'textarea')}
                                     </div>
                                 </div>
 
-                                {/* Right Column - Professional Information */}
                                 <div>
-                                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1f2937', marginBottom: '20px' }}>
-                                        Professional Information
-                                    </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Department:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.department || '—'}
+                                        <h3 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #e5e7eb', paddingBottom: '8px' }}>Professional Information</h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {renderEditableField('Department', 'department', selectedFaculty, 'select', [
+                                                { value: '', label: 'Select Department' },
+                                                { value: 'Nursing Program', label: 'Nursing Program' },
+                                                { value: 'Teachers Education Program', label: 'Teachers Education Program' },
+                                                { value: 'Engineering Program', label: 'Engineering Program' },
+                                                { value: 'Criminal Justice Program', label: 'Criminal Justice Program' },
+                                                { value: 'Computer Science Program', label: 'Computer Science Program' },
+                                                { value: 'Arts and Sciences Program', label: 'Arts and Sciences Program' },
+                                                { value: 'Business Administration Program', label: 'Business Administration Program' },
+                                                { value: 'Accountancy Program', label: 'Accountancy Program' }
+                                            ])}
+                                            {renderEditableField('Position', 'position', selectedFaculty)}
+                                            {renderEditableField('Educational Attainment', 'attainment', selectedFaculty)}
+                                            {renderEditableField('Status', 'status', selectedFaculty, 'select', [
+                                                { value: '', label: 'Select Status' },
+                                                { value: 'Full Time', label: 'Full Time' },
+                                                { value: 'Part Time', label: 'Part Time' }
+                                            ])}
                                             </div>
                                         </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Position:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.position || '—'}
                                             </div>
                                         </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Educational Attainment:
-                                            </label>
-                                            <div style={{ fontSize: '14px', color: '#1f2937' }}>
-                                                {selectedFaculty.attainment || '—'}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
-                                                Status:
-                                            </label>
-                                            <div>
-                                                <span style={{
-                                                    display: 'inline-block',
-                                                    padding: '4px 12px',
-                                                    borderRadius: '12px',
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    background: selectedFaculty.status?.toLowerCase() === 'full time' ? '#dbeafe' : '#fef3c7',
-                                                    color: selectedFaculty.status?.toLowerCase() === 'full time' ? '#1e40af' : '#92400e'
-                                                }}>
-                                                    {selectedFaculty.status || '—'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -913,4 +1043,3 @@ export default function Courses() {
         </>
     );
 }
-
