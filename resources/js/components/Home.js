@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchAcademicYears } from '../utils/api';
 
 export default function Home({ onSuccess, showForm = true, showList = true, editStudent = null }) {
     const [formData, setFormData] = useState({
@@ -15,7 +16,8 @@ export default function Home({ onSuccess, showForm = true, showList = true, edit
         program: '',
         year_level: '',
         section: '',
-        status: ''
+        status: '',
+        academic_year_id: ''
     });
     
     const [errors, setErrors] = useState({});
@@ -24,6 +26,7 @@ export default function Home({ onSuccess, showForm = true, showList = true, edit
     const [editingStudent, setEditingStudent] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [departments, setDepartments] = useState([]);
+    const [academicYears, setAcademicYears] = useState([]);
 
     useEffect(() => {
         const loadDepartments = async () => {
@@ -78,6 +81,18 @@ export default function Home({ onSuccess, showForm = true, showList = true, edit
         loadDepartments();
     }, []);
 
+    useEffect(() => {
+        const loadAcademicYears = async () => {
+            try {
+                const data = await fetchAcademicYears();
+                setAcademicYears(data);
+            } catch (error) {
+                console.error('Error loading academic years:', error);
+            }
+        };
+        loadAcademicYears();
+    }, []);
+
     // Use departments for programs
     const programs = departments;
 
@@ -105,7 +120,8 @@ export default function Home({ onSuccess, showForm = true, showList = true, edit
                 program: editStudent.program || '',
                 year_level: editStudent.year_level || '',
                 section: editStudent.section || '',
-                status: editStudent.status || ''
+                status: editStudent.status || '',
+                academic_year_id: editStudent.academic_year_id || ''
             });
             setEditingStudent(editStudent);
             setIsEditing(true);
@@ -514,6 +530,17 @@ export default function Home({ onSuccess, showForm = true, showList = true, edit
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                             </select>
+                            <select
+                                name="academic_year_id"
+                                value={formData.academic_year_id}
+                                onChange={handleInputChange}
+                                style={inputStyle}
+                            >
+                                <option value="">Select Academic Year</option>
+                                {academicYears.map((ay) => (
+                                    <option key={ay.id} value={ay.id}>{ay.year_start} - {ay.year_end}</option>
+                                ))}
+                            </select>
                             <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                                 <button
                                     type="submit"
@@ -598,7 +625,10 @@ export default function Home({ onSuccess, showForm = true, showList = true, edit
                                     ID: {student.student_id || '—'} | Program: {student.program || '—'} | Year: {student.year_level || '—'}
                                 </div>
                                 <div style={{ fontSize: '14px', color: '#cfcfcf' }}>
-                                    Section: {student.section || '—'} | Status: {student.status || '—'}
+                                    Section: {student.section || '—'} | Status: {student.status || '—'} | Academic Year: {(() => {
+                                        const selectedAY = academicYears.find(ay => ay.id === student.academic_year_id);
+                                        return selectedAY ? `${selectedAY.year_start} - ${selectedAY.year_end}` : '—';
+                                    })()}
                                 </div>
                                 <div style={{ fontSize: '14px', color: '#cfcfcf' }}>
                                     Email: {student.email || '—'} | Phone: {student.phone || '—'}

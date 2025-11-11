@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import ManageDepartments from './ManageDepartments';
+import ManageAcademicYears from './ManageAcademicYears';
+import { fetchArchivedStudents, fetchArchivedFaculty, restoreStudent, restoreFaculty } from '../utils/api';
 
 export default function Settings() {
     const [theme, setTheme] = useState('light');
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [showDepartmentsModal, setShowDepartmentsModal] = useState(false);
+    const [showAcademicYearsModal, setShowAcademicYearsModal] = useState(false);
     const [passwordForm, setPasswordForm] = useState({
         currentPassword: '',
         newPassword: '',
@@ -22,6 +25,12 @@ export default function Settings() {
     const [profileSuccess, setProfileSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isProfileLoading, setIsProfileLoading] = useState(false);
+    const [showArchivedModal, setShowArchivedModal] = useState(false);
+    const [archivedStudents, setArchivedStudents] = useState([]);
+    const [archivedFaculty, setArchivedFaculty] = useState([]);
+    const [activeTab, setActiveTab] = useState('students'); // 'students' or 'faculty'
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Load theme from localStorage on component mount
     useEffect(() => {
@@ -36,6 +45,62 @@ export default function Settings() {
         setTheme(newTheme);
         localStorage.setItem('theme', newTheme);
         document.documentElement.setAttribute('data-theme', newTheme);
+    };
+
+    // Function to load archived data
+    const loadArchivedData = async () => {
+        try {
+            const [students, faculty] = await Promise.all([
+                fetchArchivedStudents(),
+                fetchArchivedFaculty()
+            ]);
+            setArchivedStudents(students);
+            setArchivedFaculty(faculty);
+        } catch (error) {
+            console.error('Error loading archived data:', error);
+        }
+    };
+
+    // Function to restore student
+    const handleRestoreStudent = async (id) => {
+        if (!confirm('Are you sure you want to restore this student?')) return;
+        
+        setIsRestoring(true);
+        try {
+            const result = await restoreStudent(id);
+            if (result.success) {
+                alert('Student restored successfully!');
+                await loadArchivedData();
+            } else {
+                alert('Failed to restore student');
+            }
+        } catch (error) {
+            console.error('Error restoring student:', error);
+            alert('Error restoring student');
+        } finally {
+            setIsRestoring(false);
+        }
+    };
+
+    // Function to restore faculty
+    const handleRestoreFaculty = async (id) => {
+        if (!confirm('Are you sure you want to restore this faculty member?')) return;
+        
+        setIsRestoring(true);
+        try {
+            const result = await restoreFaculty(id);
+            if (result.success) {
+                alert('Faculty member restored successfully!');
+                await loadArchivedData();
+            } else {
+                alert('Failed to restore faculty member');
+            }
+        } catch (error) {
+            console.error('Error restoring faculty:', error);
+            alert('Error restoring faculty member');
+        } finally {
+            setIsRestoring(false);
+        }
     };
 
     // Function to handle password change
@@ -268,6 +333,37 @@ export default function Settings() {
             title: 'Manage Departments',
             description: 'Add, edit, and archive department information.',
             action: () => setShowDepartmentsModal(true)
+        },
+        {
+            id: 'manage-academic-years',
+            icon: (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            ),
+            iconBg: theme === 'dark' ? '#374151' : '#DBEAFE',
+            title: 'Manage Academic Years',
+            description: 'Add, edit, and archive academic year information.',
+            action: () => setShowAcademicYearsModal(true)
+        },
+        {
+            id: 'archived-items',
+            icon: (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+            ),
+            iconBg: theme === 'dark' ? '#374151' : '#EDE9FE',
+            title: 'Archived Students/Faculty',
+            description: 'View and restore archived students and faculty members.',
+            action: async () => {
+                setShowArchivedModal(true);
+                setSearchTerm('');
+                await loadArchivedData();
+            }
         },
         {
             id: 'change-theme',
@@ -998,6 +1094,361 @@ export default function Settings() {
 
             {/* Management Modals */}
             <ManageDepartments show={showDepartmentsModal} onClose={() => setShowDepartmentsModal(false)} />
+            <ManageAcademicYears show={showAcademicYearsModal} onClose={() => setShowAcademicYearsModal(false)} />
+
+            {/* Archived Items Modal */}
+            {showArchivedModal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    backdropFilter: 'blur(4px)',
+                    overflowY: 'auto'
+                }}>
+                    <div style={{
+                        background: 'var(--card-bg)',
+                        borderRadius: 16,
+                        padding: 40,
+                        maxWidth: 900,
+                        width: '90%',
+                        maxHeight: '90vh',
+                        boxShadow: 'var(--shadow-lg)',
+                        border: '1px solid var(--border-primary)',
+                        transition: 'all 0.3s ease',
+                        margin: '20px 0',
+                        overflowY: 'auto'
+                    }}>
+                        {/* Modal Header */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: 24
+                        }}>
+                            <h2 style={{
+                                fontSize: 24,
+                                fontWeight: 700,
+                                color: 'var(--text-primary)',
+                                margin: 0,
+                                transition: 'color 0.3s ease'
+                            }}>
+                                Archived Students/Faculty
+                            </h2>
+                            <button
+                                onClick={() => {
+                                    setShowArchivedModal(false);
+                                    setSearchTerm('');
+                                }}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: 8,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'var(--text-secondary)',
+                                    transition: 'color 0.3s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {/* Tabs */}
+                        <div style={{
+                            display: 'flex',
+                            gap: 8,
+                            marginBottom: 24,
+                            borderBottom: '1px solid var(--border-primary)'
+                        }}>
+                            <button
+                                onClick={() => {
+                                    setActiveTab('students');
+                                    setSearchTerm('');
+                                }}
+                                style={{
+                                    padding: '12px 24px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderBottom: activeTab === 'students' ? '2px solid #6366F1' : '2px solid transparent',
+                                    color: activeTab === 'students' ? '#6366F1' : 'var(--text-secondary)',
+                                    fontSize: 14,
+                                    fontWeight: activeTab === 'students' ? 600 : 500,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                Students ({archivedStudents.length})
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setActiveTab('faculty');
+                                    setSearchTerm('');
+                                }}
+                                style={{
+                                    padding: '12px 24px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderBottom: activeTab === 'faculty' ? '2px solid #6366F1' : '2px solid transparent',
+                                    color: activeTab === 'faculty' ? '#6366F1' : 'var(--text-secondary)',
+                                    fontSize: 14,
+                                    fontWeight: activeTab === 'faculty' ? 600 : 500,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                Faculty ({archivedFaculty.length})
+                            </button>
+                        </div>
+
+                        {/* Search Input */}
+                        <div style={{ marginBottom: 20 }}>
+                            <input
+                                type="text"
+                                placeholder={`Search ${activeTab === 'students' ? 'students' : 'faculty'} by name...`}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: '1px solid var(--border-primary)',
+                                    borderRadius: 8,
+                                    fontSize: 14,
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                    transition: 'all 0.3s ease',
+                                    outline: 'none'
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = 'var(--accent-primary)';
+                                    e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = 'var(--border-primary)';
+                                    e.target.style.boxShadow = 'none';
+                                }}
+                            />
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                            {activeTab === 'students' ? (
+                                (() => {
+                                    const filteredStudents = archivedStudents.filter(student => {
+                                        if (!searchTerm) return true;
+                                        const searchLower = searchTerm.toLowerCase();
+                                        const fullName = `${student.first_name || ''} ${student.last_name || ''}`.toLowerCase();
+                                        const studentId = (student.student_id || '').toLowerCase();
+                                        const email = (student.email || '').toLowerCase();
+                                        const program = (student.program || '').toLowerCase();
+                                        return fullName.includes(searchLower) || 
+                                               studentId.includes(searchLower) || 
+                                               email.includes(searchLower) ||
+                                               program.includes(searchLower);
+                                    });
+                                    
+                                    return filteredStudents.length === 0 ? (
+                                        <div style={{
+                                            textAlign: 'center',
+                                            padding: '40px 20px',
+                                            color: 'var(--text-secondary)'
+                                        }}>
+                                            <p>{searchTerm ? 'No archived students match your search.' : 'No archived students found.'}</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                            {filteredStudents.map((student) => (
+                                            <div
+                                                key={student.id}
+                                                style={{
+                                                    background: 'var(--bg-secondary)',
+                                                    border: '1px solid var(--border-primary)',
+                                                    borderRadius: 8,
+                                                    padding: 16,
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    transition: 'all 0.3s ease'
+                                                }}
+                                            >
+                                                <div>
+                                                    <div style={{
+                                                        fontWeight: 600,
+                                                        color: 'var(--text-primary)',
+                                                        marginBottom: 4
+                                                    }}>
+                                                        {student.first_name} {student.last_name}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: 13,
+                                                        color: 'var(--text-secondary)'
+                                                    }}>
+                                                        {student.student_id && `ID: ${student.student_id}`}
+                                                        {student.email && ` • ${student.email}`}
+                                                        {student.program && ` • ${student.program}`}
+                                                    </div>
+                                                    {student.deleted_at && (
+                                                        <div style={{
+                                                            fontSize: 12,
+                                                            color: 'var(--text-secondary)',
+                                                            marginTop: 4
+                                                        }}>
+                                                            Archived: {new Date(student.deleted_at).toLocaleDateString()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    onClick={() => handleRestoreStudent(student.id)}
+                                                    disabled={isRestoring}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#10B981',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: 6,
+                                                        fontSize: 13,
+                                                        fontWeight: 600,
+                                                        cursor: isRestoring ? 'not-allowed' : 'pointer',
+                                                        opacity: isRestoring ? 0.6 : 1,
+                                                        transition: 'all 0.3s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (!isRestoring) {
+                                                            e.currentTarget.style.background = '#059669';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        if (!isRestoring) {
+                                                            e.currentTarget.style.background = '#10B981';
+                                                        }
+                                                    }}
+                                                >
+                                                    Restore
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    );
+                                })()
+                            ) : (
+                                (() => {
+                                    const filteredFaculty = archivedFaculty.filter(faculty => {
+                                        if (!searchTerm) return true;
+                                        const searchLower = searchTerm.toLowerCase();
+                                        const fullName = `${faculty.first_name || ''} ${faculty.last_name || ''}`.toLowerCase();
+                                        const facultyId = (faculty.faculty_id || '').toLowerCase();
+                                        const email = (faculty.email || '').toLowerCase();
+                                        const department = (faculty.department || '').toLowerCase();
+                                        const position = (faculty.position || '').toLowerCase();
+                                        return fullName.includes(searchLower) || 
+                                               facultyId.includes(searchLower) || 
+                                               email.includes(searchLower) ||
+                                               department.includes(searchLower) ||
+                                               position.includes(searchLower);
+                                    });
+                                    
+                                    return filteredFaculty.length === 0 ? (
+                                        <div style={{
+                                            textAlign: 'center',
+                                            padding: '40px 20px',
+                                            color: 'var(--text-secondary)'
+                                        }}>
+                                            <p>{searchTerm ? 'No archived faculty match your search.' : 'No archived faculty found.'}</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                            {filteredFaculty.map((faculty) => (
+                                            <div
+                                                key={faculty.id}
+                                                style={{
+                                                    background: 'var(--bg-secondary)',
+                                                    border: '1px solid var(--border-primary)',
+                                                    borderRadius: 8,
+                                                    padding: 16,
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    transition: 'all 0.3s ease'
+                                                }}
+                                            >
+                                                <div>
+                                                    <div style={{
+                                                        fontWeight: 600,
+                                                        color: 'var(--text-primary)',
+                                                        marginBottom: 4
+                                                    }}>
+                                                        {faculty.first_name} {faculty.last_name}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: 13,
+                                                        color: 'var(--text-secondary)'
+                                                    }}>
+                                                        {faculty.faculty_id && `ID: ${faculty.faculty_id}`}
+                                                        {faculty.email && ` • ${faculty.email}`}
+                                                        {faculty.department && ` • ${faculty.department}`}
+                                                        {faculty.position && ` • ${faculty.position}`}
+                                                    </div>
+                                                    {faculty.deleted_at && (
+                                                        <div style={{
+                                                            fontSize: 12,
+                                                            color: 'var(--text-secondary)',
+                                                            marginTop: 4
+                                                        }}>
+                                                            Archived: {new Date(faculty.deleted_at).toLocaleDateString()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <button
+                                                    onClick={() => handleRestoreFaculty(faculty.id)}
+                                                    disabled={isRestoring}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: '#10B981',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: 6,
+                                                        fontSize: 13,
+                                                        fontWeight: 600,
+                                                        cursor: isRestoring ? 'not-allowed' : 'pointer',
+                                                        opacity: isRestoring ? 0.6 : 1,
+                                                        transition: 'all 0.3s ease'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        if (!isRestoring) {
+                                                            e.currentTarget.style.background = '#059669';
+                                                        }
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        if (!isRestoring) {
+                                                            e.currentTarget.style.background = '#10B981';
+                                                        }
+                                                    }}
+                                                >
+                                                    Restore
+                                                </button>
+                                            </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

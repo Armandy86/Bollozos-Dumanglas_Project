@@ -29,12 +29,16 @@ Route::post('/students', [StudentController::class, 'apiStore']);
 Route::get('/students/{id}', [StudentController::class, 'apiShow']);
 Route::put('/students/{id}', [StudentController::class, 'apiUpdate']);
 Route::delete('/students/{id}', [StudentController::class, 'apiDestroy']);
+Route::get('/students/archived/list', [StudentController::class, 'apiArchived']);
+Route::post('/students/{id}/restore', [StudentController::class, 'apiRestore']);
 
 Route::get('/faculty', [facultyController::class, 'apiIndex']);
 Route::post('/faculty', [facultyController::class, 'apiStore']);
 Route::get('/faculty/{id}', [facultyController::class, 'apiShow']);
 Route::put('/faculty/{id}', [facultyController::class, 'apiUpdate']);
 Route::delete('/faculty/{id}', [facultyController::class, 'apiDestroy']);
+Route::get('/faculty/archived/list', [facultyController::class, 'apiArchived']);
+Route::post('/faculty/{id}/restore', [facultyController::class, 'apiRestore']);
 
 Route::get('/departments', [DepartmentController::class, 'apiIndex']);
 Route::post('/departments', [DepartmentController::class, 'apiStore']);

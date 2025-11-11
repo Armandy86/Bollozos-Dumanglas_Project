@@ -149,7 +149,7 @@ export default function Courses() {
             const response = await fetch('/api/faculty');
             const data = await response.json();
             console.log('Fetched faculty:', data);
-            const activeFaculty = Array.isArray(data) ? data.filter(faculty => faculty.status !== 'archived') : [];
+            const activeFaculty = Array.isArray(data) ? data.filter(faculty => !faculty.deleted_at) : [];
             setFaculty(activeFaculty);
         } catch (error) {
             console.error('Error fetching faculty:', error);

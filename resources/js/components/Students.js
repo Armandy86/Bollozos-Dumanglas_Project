@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Home from './Home';
+import { fetchAcademicYears } from '../utils/api';
 
 export default function Students({ onDataUpdate }) {
     const [students, setStudents] = useState([]);
@@ -19,6 +20,7 @@ export default function Students({ onDataUpdate }) {
     const [studentToDelete, setStudentToDelete] = useState(null);
     const [showReportLogs, setShowReportLogs] = useState(false);
     const [departments, setDepartments] = useState([]);
+    const [academicYears, setAcademicYears] = useState([]);
 
     const fetchStudents = async () => {
         try {
@@ -88,6 +90,19 @@ export default function Students({ onDataUpdate }) {
             }
         };
         loadDepartments();
+    }, []);
+
+    // Load academic years from API
+    useEffect(() => {
+        const loadAcademicYears = async () => {
+            try {
+                const data = await fetchAcademicYears();
+                setAcademicYears(data);
+            } catch (error) {
+                console.error('Error loading academic years:', error);
+            }
+        };
+        loadAcademicYears();
     }, []);
 
     const openEditStudent = (student) => {
@@ -414,6 +429,7 @@ export default function Students({ onDataUpdate }) {
                             <th style={tableHeaderStyle}>Student ID</th>
                             <th style={tableHeaderStyle}>Email address</th>
                             <th style={tableHeaderStyle}>Department</th>
+                            <th style={tableHeaderStyle}>Academic Year</th>
                             <th style={tableHeaderStyle}>Gender</th>
                             <th style={tableHeaderStyle}>Actions</th>
                         </tr>
@@ -421,7 +437,7 @@ export default function Students({ onDataUpdate }) {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan="6" style={{ 
+                                <td colSpan="7" style={{ 
                                     padding: 40, 
                                     textAlign: 'center',
                                     color: '#6b7280'
@@ -431,7 +447,7 @@ export default function Students({ onDataUpdate }) {
                             </tr>
                         ) : filteredStudents.length === 0 ? (
                             <tr>
-                                <td colSpan="6" style={{ 
+                                <td colSpan="7" style={{ 
                                     padding: 40, 
                                     textAlign: 'center',
                                     color: '#6b7280'
@@ -464,6 +480,12 @@ export default function Students({ onDataUpdate }) {
                                     </td>
                                     <td style={tableCellStyle}>
                                         {student.program || '—'}
+                                    </td>
+                                    <td style={tableCellStyle}>
+                                        {(() => {
+                                            const selectedAY = academicYears.find(ay => ay.id === student.academic_year_id);
+                                            return selectedAY ? `${selectedAY.year_start} - ${selectedAY.year_end}` : '—';
+                                        })()}
                                     </td>
                                     <td style={tableCellStyle}>
                                         {student.gender || '—'}
@@ -1172,6 +1194,63 @@ export default function Students({ onDataUpdate }) {
                                                     </div>
                                                 )}
                                             </div>
+                                            <div>
+                                                <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>Academic Year:</label>
+                                                {editingField === 'academic_year_id' ? (
+                                                    <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        <select
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') saveEdit();
+                                                                if (e.key === 'Escape') cancelEdit();
+                                                            }}
+                                                            style={{
+                                                                padding: '4px 8px',
+                                                                border: '1px solid #d1d5db',
+                                                                borderRadius: '4px',
+                                                                fontSize: '14px',
+                                                                outline: 'none',
+                                                                width: '200px'
+                                                            }}
+                                                            autoFocus
+                                                        >
+                                                            <option value="">Select Academic Year</option>
+                                                            {academicYears.map((ay) => (
+                                                                <option key={ay.id} value={ay.id}>{ay.year_start} - {ay.year_end}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
+                                                        <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <div 
+                                                        style={{ 
+                                                            color: '#1f2937', 
+                                                            marginTop: '6px', 
+                                                            fontSize: '15px', 
+                                                            fontWeight: 600,
+                                                            padding: '8px 12px',
+                                                            borderRadius: '8px',
+                                                            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)',
+                                                            border: '1px solid #c7d2fe',
+                                                            display: 'inline-block',
+                                                            cursor: 'pointer',
+                                                            backgroundColor: pendingChanges.academic_year_id ? '#fef3c7' : undefined,
+                                                            border: pendingChanges.academic_year_id ? '1px solid #f59e0b' : '1px solid #c7d2fe'
+                                                        }}
+                                                        onDoubleClick={() => startEditing('academic_year_id', studentToEdit.academic_year_id)}
+                                                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+                                                        onMouseLeave={(e) => e.target.style.opacity = '1'}
+                                                    >
+                                                        {(() => {
+                                                            const selectedAY = academicYears.find(ay => ay.id === (pendingChanges.academic_year_id || studentToEdit.academic_year_id));
+                                                            return selectedAY ? `${selectedAY.year_start} - ${selectedAY.year_end}` : '—';
+                                                        })()}
+                                                        {pendingChanges.academic_year_id && <span style={{ color: '#f59e0b', marginLeft: '8px', fontSize: '12px' }}>●</span>}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1829,6 +1908,15 @@ export default function Students({ onDataUpdate }) {
                                                     </div>
                                                 )}
                                             </div>
+                                            <div>
+                                                <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>Academic Year:</label>
+                                                <div style={{ color: '#374151', marginTop: '4px' }}>
+                                                    {(() => {
+                                                        const selectedAY = academicYears.find(ay => ay.id === selectedStudent.academic_year_id);
+                                                        return selectedAY ? `${selectedAY.year_start} - ${selectedAY.year_end}` : '—';
+                                                    })()}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2191,12 +2279,14 @@ function AddStudentForm({ onSuccess }) {
         program: '',
         year_level: '',
         section: '',
-        status: ''
+        status: '',
+        academic_year_id: ''
     });
     const [errors, setErrors] = useState({});
     const [statusMessage, setStatusMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [departments, setDepartments] = useState([]);
+    const [academicYears, setAcademicYears] = useState([]);
 
     // Load departments from API
     useEffect(() => {
@@ -2250,6 +2340,19 @@ function AddStudentForm({ onSuccess }) {
             }
         };
         loadDepartments();
+    }, []);
+
+    // Load academic years from API
+    useEffect(() => {
+        const loadAcademicYears = async () => {
+            try {
+                const data = await fetchAcademicYears();
+                setAcademicYears(data);
+            } catch (error) {
+                console.error('Error loading academic years:', error);
+            }
+        };
+        loadAcademicYears();
     }, []);
 
     // Use departments for programs
@@ -2516,6 +2619,17 @@ function AddStudentForm({ onSuccess }) {
                                 onChange={handleInputChange}
                                 style={inputStyle}
                             />
+                            <select
+                                name="academic_year_id"
+                                value={formData.academic_year_id}
+                                onChange={handleInputChange}
+                                style={inputStyle}
+                            >
+                                <option value="">Select Academic Year</option>
+                                {academicYears.map((ay) => (
+                                    <option key={ay.id} value={ay.id}>{ay.year_start} - {ay.year_end}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                 </div>

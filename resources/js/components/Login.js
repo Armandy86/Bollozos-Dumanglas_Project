@@ -30,6 +30,8 @@ export default function Login() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({
                     email: formData.email,
@@ -37,7 +39,19 @@ export default function Login() {
                 })
             });
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.error('JSON parse error:', jsonError);
+                const text = await response.text();
+                console.error('Response text:', text);
+                setError('Invalid response from server. Please try again.');
+                setIsLoading(false);
+                return;
+            }
+
+            console.log('Login response:', response.status, data);
 
             if (response.ok && data.success) {
                 // Store login state in localStorage
@@ -48,11 +62,11 @@ export default function Login() {
                 // Redirect to dashboard
                 window.location.href = '/';
             } else {
-                setError(data.message || 'Invalid email or password. Please try again.');
+                setError(data.message || data.error || 'Invalid username or password. Please try again.');
             }
         } catch (error) {
             console.error('Login error:', error);
-            setError('An error occurred during login. Please try again.');
+            setError('An error occurred during login. Please try again. Error: ' + (error.message || 'Unknown error'));
         } finally {
             setIsLoading(false);
         }
@@ -218,11 +232,8 @@ export default function Login() {
                             />
                         </div>
 
-                        {/* Remember Me & Forgot Password */}
+                        {/* Remember Me */}
                         <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
                             marginBottom: '32px'
                         }}>
                             <label style={{
@@ -244,14 +255,6 @@ export default function Login() {
                                 />
                                 Remember me
                             </label>
-                            <a href="#" style={{
-                                fontSize: '14px',
-                                color: '#2196F3',
-                                textDecoration: 'none',
-                                fontWeight: '500'
-                            }}>
-                                Forgot password?
-                            </a>
                         </div>
 
                         {/* Login Button */}
@@ -302,22 +305,6 @@ export default function Login() {
                                 </>
                             )}
                         </button>
-
-                        {/* Sign Up Link */}
-                        <div style={{
-                            textAlign: 'center',
-                            fontSize: '14px',
-                            color: '#4a5568'
-                        }}>
-                            Don't have an account?{' '}
-                            <a href="#" style={{
-                                color: '#2196F3',
-                                textDecoration: 'none',
-                                fontWeight: '500'
-                            }}>
-                                Sign in here
-                            </a>
-                        </div>
                     </form>
                 </div>
             </div>

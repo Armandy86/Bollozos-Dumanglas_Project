@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 
 class UserController extends Controller
 {
     /**
-     * Login user
+     * Handle user login
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -32,13 +33,13 @@ class UserController extends Controller
                 ], 422);
             }
 
-            // Find user by email
+            // Find user by email (email field is used as username)
             $user = User::where('email', $request->email)->first();
 
             if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid credentials'
+                    'message' => 'Invalid username or password'
                 ], 401);
             }
 
@@ -46,7 +47,7 @@ class UserController extends Controller
             if (!Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid credentials'
+                    'message' => 'Invalid username or password'
                 ], 401);
             }
 
@@ -60,10 +61,11 @@ class UserController extends Controller
             ], 200);
 
         } catch (\Exception $e) {
+            Log::error('Login error: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred during login',
-                'error' => $e->getMessage()
+                'message' => 'An error occurred during login: ' . $e->getMessage()
             ], 500);
         }
     }

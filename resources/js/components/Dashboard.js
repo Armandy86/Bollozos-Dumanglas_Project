@@ -9,7 +9,7 @@ import Settings from './Settings';
 import StatCard from './shared/StatCard';
 import ListItem from './shared/ListItem';
 import { DashboardIcon, StudentsIcon, FacultyIcon, CoursesIcon, ScheduleIcon, SettingsIcon, UserIcon } from './shared/Icons';
-import { fetchStudents as apiFetchStudents, fetchFaculty as apiFetchFaculty, fetchDepartments } from '../utils/api';
+import { fetchStudents as apiFetchStudents, fetchFaculty as apiFetchFaculty, fetchDepartments, fetchAcademicYears } from '../utils/api';
 import { buttonStylePrimary, buttonStyleSecondary, modalOverlay, modalContent, buttonStyleGhost } from '../utils/styles';
 
 export default function Dashboard() {
@@ -19,6 +19,7 @@ export default function Dashboard() {
     const [currentView, setCurrentView] = useState('dashboard');
     const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const [departments, setDepartments] = useState([]);
+    const [academicYears, setAcademicYears] = useState([]);
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') || 'light';
@@ -63,6 +64,14 @@ export default function Dashboard() {
             setDepartments(data);
         };
         loadDepartments();
+    }, []);
+
+    useEffect(() => {
+        const loadAcademicYears = async () => {
+            const data = await fetchAcademicYears();
+            setAcademicYears(data);
+        };
+        loadAcademicYears();
     }, []);
 
     const [showAdd, setShowAdd] = useState(false);
@@ -111,8 +120,14 @@ export default function Dashboard() {
     const saveEdit = () => {
         if (!studentToEdit || !editingField) return;
         
+        // Convert academic_year_id to integer if it's a string
+        let value = editValue;
+        if (editingField === 'academic_year_id' && value) {
+            value = parseInt(value, 10);
+        }
+        
         // Store the change in pending changes
-        const newPendingChanges = { ...pendingChanges, [editingField]: editValue };
+        const newPendingChanges = { ...pendingChanges, [editingField]: value };
         setPendingChanges(newPendingChanges);
         setHasUnsavedChanges(true);
         
@@ -252,7 +267,7 @@ export default function Dashboard() {
                 setHasUnsavedFacultyChanges(false);
                 // Refresh the dashboard data
                 fetch('/api/faculty').then(r=>r.json()).then(d=>{
-                    const activeFaculty = Array.isArray(d) ? d.filter(faculty => faculty.status !== 'archived') : [];
+                    const activeFaculty = Array.isArray(d) ? d.filter(faculty => !faculty.deleted_at) : [];
                     setFaculty(activeFaculty);
                 });
                 alert('Faculty updated successfully!');
@@ -576,10 +591,10 @@ export default function Dashboard() {
             <p style={{ color: 'var(--text-secondary)', marginTop: 0, marginBottom: 24, fontSize: 14, transition: 'color 0.3s ease' }}>Manage student and faculty profiles efficiently</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, marginTop: 16 }}>
-                <StatCard title="Total Students" value={students.length} delta="+12% from last semester" iconBg="#e0f2fe" iconDot="#38bdf8" />
-                <StatCard title="Faculty Members" value={faculty.length} delta="+5% from last month" iconBg="#ecfccb" iconDot="#84cc16" />
-                <StatCard title="Active Courses" value={46} delta="+8% from last month" iconBg="#ede9fe" iconDot="#8b5cf6" />
-                <StatCard title="Departments" value={8} delta="No change from last month" iconBg="#ffedd5" iconDot="#f97316" />
+                <StatCard title="Total Students" value={students.filter(s => !s.deleted_at).length} delta="" iconBg="#e0f2fe" iconDot="#38bdf8" />
+                <StatCard title="Faculty Members" value={faculty.filter(f => !f.deleted_at).length} delta="" iconBg="#ecfccb" iconDot="#84cc16" />
+                <StatCard title="Active Courses" value={46} delta="" iconBg="#ede9fe" iconDot="#8b5cf6" />
+                <StatCard title="Departments" value={departments.filter(dept => !dept.is_archived).length} delta="" iconBg="#ffedd5" iconDot="#f97316" />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
@@ -597,7 +612,10 @@ export default function Dashboard() {
                                     <ListItem 
                                         key={s.id} 
                                         title={`${s.first_name} ${s.last_name}`} 
-                                        subtitle={`${s.program || 'Program'} · ${s.year_level || ''} Year`} 
+                                        subtitle={`${s.program || 'Program'} · ${s.year_level || ''} Year${(() => {
+                                            const selectedAY = academicYears.find(ay => ay.id === s.academic_year_id);
+                                            return selectedAY ? ` · ${selectedAY.year_start}-${selectedAY.year_end}` : '';
+                                        })()}`} 
                                         meta={`ID: ${s.student_id || '—'}`}
                                         student={s}
                                         onViewDetails={openStudentDetails}
@@ -756,6 +774,15 @@ export default function Dashboard() {
                                                     fontWeight: '600'
                                                 }}>
                                                     {selectedStudent.status || '—'}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>Academic Year:</label>
+                                                <div style={{ color: '#374151', marginTop: '4px' }}>
+                                                    {(() => {
+                                                        const selectedAY = academicYears.find(ay => ay.id === selectedStudent.academic_year_id);
+                                                        return selectedAY ? `${selectedAY.year_start} - ${selectedAY.year_end}` : '—';
+                                                    })()}
                                                 </div>
                                             </div>
                                         </div>
@@ -1236,8 +1263,8 @@ export default function Dashboard() {
                                                             autoFocus
                                                         >
                                                             <option value="">Select Program/Course</option>
-                                                            {departments.map((dept, index) => (
-                                                                <option key={index} value={dept}>{dept}</option>
+                                                            {departments.filter(dept => !dept.is_archived).map((dept, index) => (
+                                                                <option key={index} value={dept.name}>{dept.name}</option>
                                                             ))}
                                                         </select>
                                                         <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
@@ -1415,6 +1442,54 @@ export default function Dashboard() {
                                                     </div>
                                                 )}
                                             </div>
+                                            <div>
+                                                <label style={{ fontWeight: '600', color: '#6b7280', fontSize: '14px' }}>Academic Year:</label>
+                                                {editingField === 'academic_year_id' ? (
+                                                    <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        <select
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            style={{
+                                                                padding: '4px 8px',
+                                                                border: '1px solid #d1d5db',
+                                                                borderRadius: '4px',
+                                                                fontSize: '14px',
+                                                                outline: 'none',
+                                                                width: '200px'
+                                                            }}
+                                                            autoFocus
+                                                        >
+                                                            <option value="">Select Academic Year</option>
+                                                            {academicYears.map((ay) => (
+                                                                <option key={ay.id} value={ay.id}>{ay.year_start} - {ay.year_end}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button onClick={saveEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
+                                                        <button onClick={cancelEdit} style={{ padding: '4px 8px', background: '#dc2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        style={{
+                                                            color: '#374151',
+                                                            marginTop: '4px',
+                                                            cursor: 'pointer',
+                                                            padding: '2px 4px',
+                                                            borderRadius: '4px',
+                                                            backgroundColor: pendingChanges.academic_year_id ? '#fef3c7' : 'transparent',
+                                                            border: pendingChanges.academic_year_id ? '1px solid #f59e0b' : '1px solid transparent'
+                                                        }}
+                                                        onDoubleClick={() => startEditing('academic_year_id', studentToEdit.academic_year_id)}
+                                                        onMouseEnter={(e) => e.target.style.background = '#f3f4f6'}
+                                                        onMouseLeave={(e) => e.target.style.background = pendingChanges.academic_year_id ? '#fef3c7' : 'transparent'}
+                                                    >
+                                                        {(() => {
+                                                            const selectedAY = academicYears.find(ay => ay.id === (pendingChanges.academic_year_id || studentToEdit.academic_year_id));
+                                                            return selectedAY ? `${selectedAY.year_start} - ${selectedAY.year_end}` : '—';
+                                                        })()}
+                                                        {pendingChanges.academic_year_id && <span style={{ color: '#f59e0b', marginLeft: '8px', fontSize: '12px' }}>●</span>}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1437,7 +1512,7 @@ export default function Dashboard() {
                                     closeAddFaculty(); 
                                     /* refresh preview */ 
                                     fetch('/api/faculty').then(r=>r.json()).then(d=>{
-                    const activeFaculty = Array.isArray(d) ? d.filter(faculty => faculty.status !== 'archived') : [];
+                    const activeFaculty = Array.isArray(d) ? d.filter(faculty => !faculty.deleted_at) : [];
                     setFaculty(activeFaculty);
                 }); 
                                 }} 
@@ -2025,8 +2100,8 @@ export default function Dashboard() {
                                                             autoFocus
                                                         >
                                                             <option value="">Select Department</option>
-                                                            {departments.map((dept, index) => (
-                                                                <option key={index} value={dept}>{dept}</option>
+                                                            {departments.filter(dept => !dept.is_archived).map((dept, index) => (
+                                                                <option key={index} value={dept.name}>{dept.name}</option>
                                                             ))}
                                                         </select>
                                                         <button onClick={saveFacultyEdit} style={{ padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>✓</button>
@@ -2158,3 +2233,4 @@ export default function Dashboard() {
         </div>
     );
 }
+

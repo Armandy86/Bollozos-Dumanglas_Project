@@ -24,8 +24,8 @@ export default function FacultyList({ onDataUpdate }) {
         try {
             const response = await fetch('/api/faculty');
             const data = await response.json();
-            // Filter out archived faculty members
-            const activeFaculty = Array.isArray(data) ? data.filter(faculty => faculty.status !== 'archived') : [];
+            // Filter out archived faculty members (using soft deletes)
+            const activeFaculty = Array.isArray(data) ? data.filter(faculty => !faculty.deleted_at) : [];
             setFaculty(activeFaculty);
         } catch (error) {
             setFaculty([]);
@@ -122,18 +122,12 @@ export default function FacultyList({ onDataUpdate }) {
         if (!facultyToDelete) return;
         
         try {
-            // Archive the faculty by updating their status to 'archived' instead of deleting
+            // Soft delete the faculty (archive)
             const response = await fetch(`/api/faculty/${facultyToDelete.id}`, {
-                method: 'PUT',
+                method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    ...facultyToDelete,
-                    status: 'archived',
-                    archived_at: new Date().toISOString()
-                })
+                }
             });
 
             if (response.ok) {
@@ -142,13 +136,13 @@ export default function FacultyList({ onDataUpdate }) {
                 if (onDataUpdate) {
                     onDataUpdate();
                 }
-                alert('Faculty deleted successfully!');
+                alert('Faculty archived successfully!');
             } else {
-                alert('Failed to delete faculty. Please try again.');
+                alert('Failed to archive faculty. Please try again.');
             }
         } catch (error) {
-            console.error('Error deleting faculty:', error);
-            alert('Error deleting faculty. Please try again.');
+            console.error('Error archiving faculty:', error);
+            alert('Error archiving faculty. Please try again.');
         }
     };
 

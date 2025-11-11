@@ -30,5 +30,6 @@ class Student extends Model
         'year_level',
         'section',
         'status',
+        'academic_year_id',
     ];
 }

@@ -39,7 +39,7 @@ class facultyController extends Controller
 
     public function apiIndex()
     {
-        $faculty = faculty::latest()->get();
+        $faculty = faculty::whereNull('deleted_at')->latest()->get();
         return response()->json($faculty);
     }
 
@@ -143,11 +143,42 @@ class facultyController extends Controller
             $faculty->delete();
 
             return response()->json([
-                'message' => 'Faculty deleted successfully'
+                'message' => 'Faculty archived successfully'
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to delete faculty',
+                'message' => 'Failed to archive faculty',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function apiArchived()
+    {
+        try {
+            $faculty = faculty::onlyTrashed()->latest()->get();
+            return response()->json($faculty);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to fetch archived faculty',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function apiRestore($id)
+    {
+        try {
+            $faculty = faculty::withTrashed()->findOrFail($id);
+            $faculty->restore();
+
+            return response()->json([
+                'message' => 'Faculty restored successfully',
+                'faculty' => $faculty
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to restore faculty',
                 'error' => $e->getMessage()
             ], 500);
         }

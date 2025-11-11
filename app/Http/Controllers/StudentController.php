@@ -30,6 +30,7 @@ class StudentController extends Controller
             'year_level' => ['nullable', 'string', 'max:50'],
             'section' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string', 'max:50'],
+            'academic_year_id' => ['nullable', 'integer', 'exists:academic_years,id'],
         ]);
 
         Student::create($validated);
@@ -39,7 +40,7 @@ class StudentController extends Controller
 
     public function apiIndex()
     {
-        $students = Student::latest()->get();
+        $students = Student::whereNull('deleted_at')->latest()->get();
         return response()->json($students);
     }
 
@@ -143,11 +144,42 @@ class StudentController extends Controller
             $student->delete();
 
             return response()->json([
-                'message' => 'Student deleted successfully'
+                'message' => 'Student archived successfully'
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to delete student',
+                'message' => 'Failed to archive student',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function apiArchived()
+    {
+        try {
+            $students = Student::onlyTrashed()->latest()->get();
+            return response()->json($students);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to fetch archived students',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function apiRestore($id)
+    {
+        try {
+            $student = Student::withTrashed()->findOrFail($id);
+            $student->restore();
+
+            return response()->json([
+                'message' => 'Student restored successfully',
+                'student' => $student
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to restore student',
                 'error' => $e->getMessage()
             ], 500);
         }

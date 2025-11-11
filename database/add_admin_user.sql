@@ -1,6 +1,3 @@
--- Simple insert for admin user
--- This creates a user with email 'admin' and password 'admin123'
--- Run this in your database or use tinker command below
 
 INSERT INTO users (name, email, password, created_at, updated_at) 
 VALUES (
@@ -11,8 +8,4 @@ VALUES (
     NOW()
 );
 
--- OR run this in PowerShell:
--- php artisan tinker
--- Then paste: \App\Models\User::create(['name' => 'Administrator', 'email' => 'admin', 'password' => bcrypt('admin123')]);
--- Then type: exit
 

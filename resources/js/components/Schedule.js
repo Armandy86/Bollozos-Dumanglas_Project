@@ -17,7 +17,7 @@ export default function Schedule({ selectedPerson = null, onBack = null }) {
                 const studentsData = await studentsRes.json();
                 const facultyData = await facultyRes.json();
                 setStudents(Array.isArray(studentsData) ? studentsData : []);
-                setFaculty(Array.isArray(facultyData) ? facultyData.filter(f => f.status !== 'archived') : []);
+                setFaculty(Array.isArray(facultyData) ? facultyData.filter(f => !f.deleted_at) : []);
             } catch (error) {
                 console.error('Error fetching data:', error);
             }

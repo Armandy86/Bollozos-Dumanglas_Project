@@ -17,7 +17,7 @@ export const fetchFaculty = async () => {
     try {
         const response = await fetch('/api/faculty');
         const data = await response.json();
-        return Array.isArray(data) ? data.filter(f => f.status !== 'archived') : [];
+        return Array.isArray(data) ? data : [];
     } catch (error) {
         console.error('Error fetching faculty:', error);
         return [];
@@ -40,13 +40,20 @@ export const fetchDepartments = async () => {
         const response = await fetch('/api/departments');
         if (response.ok) {
             const data = await response.json();
-            const deptNames = Array.isArray(data) ? data.map(dept => dept.name || dept) : [];
-            return deptNames.length > 0 ? deptNames : fallbackDepartments;
+            if (Array.isArray(data) && data.length > 0) {
+                // Return full department objects with name and is_archived
+                return data.map(dept => ({
+                    name: dept.name || dept,
+                    is_archived: dept.is_archived || false
+                }));
+            }
+            // Return fallback as objects
+            return fallbackDepartments.map(name => ({ name, is_archived: false }));
         }
-        return fallbackDepartments;
+        return fallbackDepartments.map(name => ({ name, is_archived: false }));
     } catch (error) {
         console.error('Error fetching departments:', error);
-        return fallbackDepartments;
+        return fallbackDepartments.map(name => ({ name, is_archived: false }));
     }
 };
 
@@ -145,6 +152,69 @@ export const createFaculty = async (data) => {
     } catch (error) {
         console.error('Error creating faculty:', error);
         return { success: false, error };
+    }
+};
+
+export const fetchArchivedStudents = async () => {
+    try {
+        const response = await fetch('/api/students/archived/list');
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Error fetching archived students:', error);
+        return [];
+    }
+};
+
+export const fetchArchivedFaculty = async () => {
+    try {
+        const response = await fetch('/api/faculty/archived/list');
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Error fetching archived faculty:', error);
+        return [];
+    }
+};
+
+export const restoreStudent = async (id) => {
+    try {
+        const response = await fetch(`/api/students/${id}/restore`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': getCsrfToken()
+            }
+        });
+        return { success: response.ok, data: await response.json() };
+    } catch (error) {
+        console.error('Error restoring student:', error);
+        return { success: false, error };
+    }
+};
+
+export const restoreFaculty = async (id) => {
+    try {
+        const response = await fetch(`/api/faculty/${id}/restore`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': getCsrfToken()
+            }
+        });
+        return { success: response.ok, data: await response.json() };
+    } catch (error) {
+        console.error('Error restoring faculty:', error);
+        return { success: false, error };
+    }
+};
+
+export const fetchAcademicYears = async () => {
+    try {
+        const response = await fetch('/api/academic-years');
+        const data = await response.json();
+        return Array.isArray(data) ? data.filter(ay => !ay.is_archived) : [];
+    } catch (error) {
+        console.error('Error fetching academic years:', error);
+        return [];
     }
 };
 
